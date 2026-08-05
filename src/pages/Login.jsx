@@ -45,12 +45,12 @@ export default function Login() {
 
         {/* App name and tagline at the top */}
         <div className="mb-10 text-center">
-          <h1 className="text-4xl font-bold text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-300">medRota</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-shine">medRota</h1>
           <p className="text-slate-400 mt-2 text-sm">Practice scheduling, simplified</p>
         </div>
 
         {/* The login card */}
-        <GlassCard className="p-8 space-y-5">
+        <GlassCard className="glass-panel--deep p-8 space-y-5">
 
           {/* Email input field */}
           <div>

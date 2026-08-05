@@ -250,7 +250,7 @@ export default function Settings({ org, profile }) {
               onClick={() => toggleDay(day)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all backdrop-blur-xl border ${
                 workingDays[day]
-                  ? 'bg-gradient-to-b from-accent-blue to-[#3d6fe0] text-white border-white/20 shadow-glow-accent'
+                  ? 'bg-gradient-to-b from-accent-blue to-[#3f5fc4] text-white border-white/20 shadow-glow-accent'
                   : 'bg-glass-50 text-slate-400 hover:text-white border-glass-border'
               }`}
             >

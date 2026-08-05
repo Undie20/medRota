@@ -495,8 +495,8 @@ export default function Schedule({ org, profile }) {
       <div
         key={slot.id}
         onClick={(e) => { e.stopPropagation(); openEditModal(slot) }}
-        className={`rounded-lg p-2 cursor-pointer text-xs space-y-0.5 backdrop-blur-xl border border-white/5 transition-opacity ${
-          isCancelled ? 'opacity-40 line-through' : 'hover:opacity-80'
+        className={`rounded-lg p-2 cursor-pointer text-xs space-y-0.5 backdrop-blur-xl border border-white/5 transition-all ${
+          isCancelled ? 'opacity-40 line-through' : 'hover:-translate-y-0.5 hover:brightness-110'
         }`}
         style={{
           backgroundColor: (doctor?.color || '#3b82f6') + '2b',
@@ -728,7 +728,7 @@ export default function Schedule({ org, profile }) {
                   onClick={() => setView(v)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all backdrop-blur-xl border ${
                     view === v
-                      ? 'bg-gradient-to-b from-accent-blue to-[#3d6fe0] text-white border-white/20 shadow-glow-accent'
+                      ? 'bg-gradient-to-b from-accent-blue to-[#3f5fc4] text-white border-white/20 shadow-glow-accent'
                       : 'bg-glass-50 text-slate-400 hover:text-white border-glass-border'
                   }`}
                 >{v}</button>

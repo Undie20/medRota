@@ -7,7 +7,7 @@ export default function TopBar({ org, profile }) {
   // profile - the logged in user's profile (has .first_name, .last_name, .role)
 
   return (
-    <div className="h-16 bg-glass-50 backdrop-blur-2xl border-b border-glass-border flex items-center justify-between px-6">
+    <div className="h-16 glass-panel glass-panel--soft flex items-center justify-between px-6">
 
       {/* Organisation name on the left */}
       <div className="text-white font-semibold">

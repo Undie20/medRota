@@ -50,9 +50,9 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, profile }) 
   const navItems = profile?.role === 'admin' ? adminNavItems : staffNavItems
 
   return (
-    <div className="w-56 bg-glass-50 backdrop-blur-2xl border-r border-glass-border flex flex-col">
-      <div className="p-6 border-b border-glass-border">
-        <h1 className="text-xl font-bold text-white tracking-tight">medRota</h1>
+    <div className="w-56 glass-panel glass-panel--soft flex flex-col">
+      <div className="h-16 px-6 flex items-center border-b border-glass-border">
+        <h1 className="text-xl font-bold tracking-tight text-shine">medRota</h1>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
@@ -62,7 +62,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, profile }) 
             onClick={() => onNavigate(item.key)}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
               currentPage === item.key
-                ? 'bg-gradient-to-b from-accent-blue to-[#3d6fe0] text-white shadow-glow-accent border border-white/20'
+                ? 'bg-gradient-to-b from-accent-blue to-[#3f5fc4] text-white shadow-glow-accent border border-white/20'
                 : 'text-slate-400 hover:text-white hover:bg-glass-100 border border-transparent'
             }`}
           >

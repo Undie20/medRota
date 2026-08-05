@@ -7,7 +7,7 @@ export default function GlassModal({ open = true, onClose, className = '', child
       onClick={onClose}
     >
       <div
-        className={`bg-glass-100 backdrop-blur-2xl border border-glass-border-strong rounded-2xl p-6 shadow-glass-lg max-w-md w-full ${className}`}
+        className={`glass-panel glass-panel--deep rounded-2xl p-6 max-w-md w-full ${className}`}
         onClick={e => e.stopPropagation()}
       >
         {children}
