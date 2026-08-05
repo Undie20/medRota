@@ -9,6 +9,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { parseCommand } from '../lib/commandParser'
+import GlassCard from '../components/ui/GlassCard'
+import GlassButton from '../components/ui/GlassButton'
+import GlassInput from '../components/ui/GlassInput'
+import GlassLabel from '../components/ui/GlassLabel'
+import GlassModal from '../components/ui/GlassModal'
 import {
   getRotationWeek,
   getWeekDates,
@@ -490,11 +495,11 @@ export default function Schedule({ org, profile }) {
       <div
         key={slot.id}
         onClick={(e) => { e.stopPropagation(); openEditModal(slot) }}
-        className={`rounded-lg p-2 cursor-pointer text-xs space-y-0.5 transition-opacity ${
+        className={`rounded-lg p-2 cursor-pointer text-xs space-y-0.5 backdrop-blur-xl border border-white/5 transition-opacity ${
           isCancelled ? 'opacity-40 line-through' : 'hover:opacity-80'
         }`}
         style={{
-          backgroundColor: (doctor?.color || '#3b82f6') + '33',
+          backgroundColor: (doctor?.color || '#3b82f6') + '2b',
           borderLeft: `3px solid ${doctor?.color || '#3b82f6'}`
         }}
       >
@@ -520,10 +525,10 @@ export default function Schedule({ org, profile }) {
       <div
         key={`${dayName}-${weekNumber}`}
         onClick={() => openAddModal(dayName, weekNumber)}
-        className={`min-h-24 p-2 rounded-xl border cursor-pointer transition-colors space-y-1 ${
+        className={`min-h-24 p-2 rounded-xl border backdrop-blur-xl cursor-pointer transition-colors space-y-1 ${
           isToday
-            ? 'border-blue-500 bg-blue-500/5'
-            : 'border-slate-800 bg-slate-900 hover:border-slate-600'
+            ? 'border-accent-blue/50 bg-accent-blue/5'
+            : 'border-glass-border bg-glass-50 hover:border-glass-border-strong'
         }`}
       >
         {cellSlots.map(slot => renderSlotCard(slot, date))}
@@ -586,8 +591,8 @@ export default function Schedule({ org, profile }) {
 
     return (
       <div className="max-w-lg">
-        <div className={`rounded-xl border p-4 space-y-2 ${
-          isToday ? 'border-blue-500' : 'border-slate-800'
+        <div className={`rounded-xl border backdrop-blur-xl bg-glass-50 p-4 space-y-2 ${
+          isToday ? 'border-accent-blue/50' : 'border-glass-border'
         }`}>
           {rotationWeeks > 1 && weekNum && (
             <p className="text-blue-400 text-xs font-medium uppercase tracking-widest">
@@ -610,7 +615,7 @@ export default function Schedule({ org, profile }) {
               {daySlots.map(slot => renderSlotCard(slot, currentDate))}
               <button
                 onClick={() => openAddModal(dayName, weekNum || 1)}
-                className="w-full text-slate-600 hover:text-slate-400 text-xs py-2 border border-dashed border-slate-800 rounded-lg transition-colors"
+                className="w-full text-slate-600 hover:text-slate-400 text-xs py-2 border border-dashed border-glass-border rounded-lg transition-colors"
               >
                 + Add slot
               </button>
@@ -647,10 +652,10 @@ export default function Schedule({ org, profile }) {
               <div
                 key={date.toISOString()}
                 onClick={() => isActive && openAddModal(dayName, weekNum || 1)}
-                className={`min-h-16 p-1 rounded-lg border text-xs transition-colors ${
-                  isToday ? 'border-blue-500' :
+                className={`min-h-16 p-1 rounded-lg border backdrop-blur-xl text-xs transition-colors ${
+                  isToday ? 'border-accent-blue/50 bg-accent-blue/5' :
                   isCurrentMonth && isActive
-                    ? 'border-slate-800 hover:border-slate-600 cursor-pointer'
+                    ? 'border-glass-border bg-glass-50 hover:border-glass-border-strong cursor-pointer'
                     : 'border-transparent'
                 } ${!isCurrentMonth ? 'opacity-30' : ''}`}
               >
@@ -704,15 +709,15 @@ export default function Schedule({ org, profile }) {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setCurrentDate(navigateDate(currentDate, -1, view))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-glass-50 border border-glass-border backdrop-blur-xl hover:bg-glass-100 text-white transition-colors"
               >‹</button>
               <button
                 onClick={() => setCurrentDate(new Date())}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-glass-50 border border-glass-border backdrop-blur-xl hover:bg-glass-100 text-white text-xs font-medium transition-colors"
               >Today</button>
               <button
                 onClick={() => setCurrentDate(navigateDate(currentDate, 1, view))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-glass-50 border border-glass-border backdrop-blur-xl hover:bg-glass-100 text-white transition-colors"
               >›</button>
               <h2 className="text-white font-semibold text-sm">{getViewTitle()}</h2>
             </div>
@@ -721,8 +726,10 @@ export default function Schedule({ org, profile }) {
                 <button
                   key={v}
                   onClick={() => setView(v)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
-                    view === v ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all backdrop-blur-xl border ${
+                    view === v
+                      ? 'bg-gradient-to-b from-accent-blue to-[#3d6fe0] text-white border-white/20 shadow-glow-accent'
+                      : 'bg-glass-50 text-slate-400 hover:text-white border-glass-border'
                   }`}
                 >{v}</button>
               ))}
@@ -730,132 +737,126 @@ export default function Schedule({ org, profile }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <input
+            <GlassInput
               type="text"
               value={aiInput}
               onChange={e => { setAiInput(e.target.value); setAiError('') }}
               onKeyDown={e => e.key === 'Enter' && handleAiParse()}
               placeholder='✦ e.g. "Dr Andy is away Friday" or "Dr Andy has a clinic every Friday 9am-5pm at Brisbane Radiology, Athauv is taking care of it"'
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="flex-1 px-4 py-2"
             />
-            <button
+            <GlassButton
               onClick={handleAiParse}
               disabled={aiLoading || !aiInput.trim()}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
-            >{aiLoading ? 'Working...' : 'Run'}</button>
+              className="px-4 py-2 whitespace-nowrap"
+            >{aiLoading ? 'Working...' : 'Run'}</GlassButton>
           </div>
           {aiError && <p className="text-red-400 text-xs px-1">{aiError}</p>}
         </div>
 
         {!scheduleConfig && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+          <div className="bg-yellow-500/10 border border-yellow-500/30 backdrop-blur-xl rounded-xl p-4">
             <p className="text-yellow-400 text-sm">
               ⚠️ No schedule config found. Go to Settings to configure your rotation.
             </p>
           </div>
         )}
 
-        <div className="bg-slate-950 rounded-xl">
+        <div className="rounded-xl">
           {view === 'day' && renderDayView()}
           {view === 'week' && renderWeekView()}
           {view === 'month' && renderMonthView()}
         </div>
       </div>
 
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto">
+      <GlassModal open={modalOpen} onClose={closeModal} className="space-y-4 max-h-[90vh] overflow-y-auto">
 
-            <h3 className="text-white font-bold text-lg">
-              {selectedSlot
-                ? 'Edit Slot'
-                : `Add Slot — ${formDayOfWeek}${rotationWeeks > 1 ? ` (Week ${formWeekNumber})` : ''}`
-              }
-            </h3>
+        <h3 className="text-white font-bold text-lg">
+          {selectedSlot
+            ? 'Edit Slot'
+            : `Add Slot — ${formDayOfWeek}${rotationWeeks > 1 ? ` (Week ${formWeekNumber})` : ''}`
+          }
+        </h3>
 
             <div>
-              <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">Doctor</label>
-              <select
+              <GlassLabel>Doctor</GlassLabel>
+              <GlassInput
+                as="select"
                 value={formDoctorId}
                 onChange={e => setFormDoctorId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
               >
                 <option value="">Select a doctor</option>
                 {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+              </GlassInput>
             </div>
 
             {rotationWeeks > 1 && (
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">Rotation Week</label>
-                <select
+                <GlassLabel>Rotation Week</GlassLabel>
+                <GlassInput
+                  as="select"
                   value={formWeekNumber}
                   onChange={e => setFormWeekNumber(parseInt(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
                 >
                   {Array.from({ length: rotationWeeks }, (_, i) => i + 1).map(w => (
                     <option key={w} value={w}>Week {w}</option>
                   ))}
-                </select>
+                </GlassInput>
               </div>
             )}
 
             <div>
-              <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">Day</label>
-              <select
+              <GlassLabel>Day</GlassLabel>
+              <GlassInput
+                as="select"
                 value={formDayOfWeek}
                 onChange={e => setFormDayOfWeek(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
               >
                 {activeDays.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
+              </GlassInput>
             </div>
 
             <div>
-              <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">Clinic Label</label>
-              <input
+              <GlassLabel>Clinic Label</GlassLabel>
+              <GlassInput
                 type="text"
                 value={formLabel}
                 onChange={e => setFormLabel(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
                 placeholder="e.g. Morning Clinic, Ward Round, Telehealth"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">Start</label>
-                <input
+                <GlassLabel>Start</GlassLabel>
+                <GlassInput
                   type="time"
                   value={formStartTime}
                   onChange={e => setFormStartTime(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">End</label>
-                <input
+                <GlassLabel>End</GlassLabel>
+                <GlassInput
                   type="time"
                   value={formEndTime}
                   onChange={e => setFormEndTime(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">Location</label>
-              <input
+              <GlassLabel>Location</GlassLabel>
+              <GlassInput
                 type="text"
                 value={formLocation}
                 onChange={e => setFormLocation(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
                 placeholder="e.g. Room 3B, Brisbane Radiology"
               />
             </div>
 
             <div>
-              <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">Assign Staff</label>
+              <GlassLabel>Assign Staff</GlassLabel>
               {staffList.length === 0 ? (
                 <p className="text-slate-600 text-xs">No staff added yet.</p>
               ) : (
@@ -864,8 +865,8 @@ export default function Schedule({ org, profile }) {
                     <button
                       key={member.id}
                       onClick={() => toggleStaff(member.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        formStaffIds.includes(member.id) ? 'text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl border transition-colors ${
+                        formStaffIds.includes(member.id) ? 'text-white border-white/20' : 'bg-glass-50 border-glass-border text-slate-400 hover:text-white'
                       }`}
                       style={formStaffIds.includes(member.id) ? { backgroundColor: member.color } : {}}
                     >
@@ -877,11 +878,12 @@ export default function Schedule({ org, profile }) {
             </div>
 
             <div>
-              <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">Notes</label>
-              <textarea
+              <GlassLabel>Notes</GlassLabel>
+              <GlassInput
+                as="textarea"
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
+                className="resize-none"
                 rows={2}
                 placeholder="Any additional notes..."
               />
@@ -890,19 +892,20 @@ export default function Schedule({ org, profile }) {
             {formError && <p className="text-red-400 text-xs">{formError}</p>}
 
             <div className="flex gap-3 pt-2">
-              <button
+              <GlassButton
                 onClick={handleSaveSlot}
                 disabled={formLoading}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg py-3 text-sm font-medium transition-colors"
+                className="flex-1"
               >
                 {formLoading ? 'Saving...' : selectedSlot ? 'Save Changes' : 'Add Slot'}
-              </button>
-              <button
+              </GlassButton>
+              <GlassButton
+                variant="secondary"
                 onClick={closeModal}
-                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg py-3 text-sm font-medium transition-colors"
+                className="flex-1"
               >
                 Cancel
-              </button>
+              </GlassButton>
             </div>
 
             {selectedSlot && (
@@ -922,9 +925,7 @@ export default function Schedule({ org, profile }) {
               </div>
             )}
 
-          </div>
-        </div>
-      )}
+      </GlassModal>
     </div>
   )
 }

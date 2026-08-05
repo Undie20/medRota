@@ -50,8 +50,8 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, profile }) 
   const navItems = profile?.role === 'admin' ? adminNavItems : staffNavItems
 
   return (
-    <div className="w-56 bg-slate-900 border-r border-slate-800 flex flex-col">
-      <div className="p-6 border-b border-slate-800">
+    <div className="w-56 bg-glass-50 backdrop-blur-2xl border-r border-glass-border flex flex-col">
+      <div className="p-6 border-b border-glass-border">
         <h1 className="text-xl font-bold text-white tracking-tight">medRota</h1>
       </div>
 
@@ -60,10 +60,10 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, profile }) 
           <button
             key={item.key}
             onClick={() => onNavigate(item.key)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
               currentPage === item.key
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                ? 'bg-gradient-to-b from-accent-blue to-[#3d6fe0] text-white shadow-glow-accent border border-white/20'
+                : 'text-slate-400 hover:text-white hover:bg-glass-100 border border-transparent'
             }`}
           >
             {item.icon}
@@ -72,10 +72,10 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, profile }) 
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-glass-border">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-glass-100 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

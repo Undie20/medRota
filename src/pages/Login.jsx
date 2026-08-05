@@ -5,6 +5,10 @@
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import GlassCard from '../components/ui/GlassCard'
+import GlassInput from '../components/ui/GlassInput'
+import GlassLabel from '../components/ui/GlassLabel'
+import GlassButton from '../components/ui/GlassButton'
 
 export default function Login() {
   // Tracks what the user types into each input field
@@ -35,46 +39,40 @@ export default function Login() {
   }
 
   return (
-    // Full screen dark background with everything centred
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+    // Full screen gradient-mesh background with everything centred
+    <div className="app-shell-bg min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
 
         {/* App name and tagline at the top */}
         <div className="mb-10 text-center">
-          <h1 className="text-4xl font-bold text-white tracking-tight">medRota</h1>
+          <h1 className="text-4xl font-bold text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-300">medRota</h1>
           <p className="text-slate-400 mt-2 text-sm">Practice scheduling, simplified</p>
         </div>
 
         {/* The login card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-4">
+        <GlassCard className="p-8 space-y-5">
 
           {/* Email input field */}
           <div>
-            <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">
-              Email
-            </label>
-            <input
+            <GlassLabel>Email</GlassLabel>
+            <GlassInput
               type="email"
               value={email}
               // Every keystroke updates the email state
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
               placeholder="you@example.com"
             />
           </div>
 
           {/* Password input field */}
           <div>
-            <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">
-              Password
-            </label>
-            <input
+            <GlassLabel>Password</GlassLabel>
+            <GlassInput
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               // Pressing Enter triggers sign in so the user doesn't have to click the button
               onKeyDown={e => e.key === 'Enter' && handleSignIn()}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
               placeholder="••••••••"
             />
           </div>
@@ -86,21 +84,21 @@ export default function Login() {
 
           {/* Sign in button */}
           {/* disabled={loading} prevents double-clicking while waiting */}
-          <button
+          <GlassButton
             onClick={handleSignIn}
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-lg py-3 text-sm font-medium transition-colors disabled:opacity-50"
+            className="w-full"
           >
             {/* Button text changes while loading so the user knows something is happening */}
             {loading ? 'Signing in...' : 'Sign In'}
-          </button>
+          </GlassButton>
 
           {/* Small note at the bottom - no register link, intentionally */}
-          <p className="text-slate-600 text-xs text-center">
+          <p className="text-slate-500 text-xs text-center">
             Contact your administrator if you need access.
           </p>
 
-        </div>
+        </GlassCard>
       </div>
     </div>
   )

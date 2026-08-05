@@ -8,6 +8,10 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import GlassCard from '../components/ui/GlassCard'
+import GlassButton from '../components/ui/GlassButton'
+import GlassInput from '../components/ui/GlassInput'
+import GlassLabel from '../components/ui/GlassLabel'
 
 export default function Settings({ org, profile }) {
   // rotationWeeks = how many weeks in the cycle (1 = no rotation, 2, 3, 4, or custom)
@@ -154,24 +158,21 @@ export default function Settings({ org, profile }) {
       </div>
 
       {/* Organisation name */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+      <GlassCard className="p-6 space-y-4">
         <h3 className="text-white font-semibold">Organisation</h3>
         <div>
-          <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">
-            Organisation Name
-          </label>
-          <input
+          <GlassLabel>Organisation Name</GlassLabel>
+          <GlassInput
             type="text"
             value={orgName}
             onChange={e => setOrgName(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
             placeholder="e.g. Riverside Medical Practice"
           />
         </div>
-      </div>
+      </GlassCard>
 
       {/* Rotation type */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+      <GlassCard className="p-6 space-y-4">
         <div>
           <h3 className="text-white font-semibold">Schedule Rotation</h3>
           <p className="text-slate-400 text-xs mt-1">
@@ -185,10 +186,10 @@ export default function Settings({ org, profile }) {
             <button
               key={option.value}
               onClick={() => setRotationWeeks(option.value)}
-              className={`p-3 rounded-xl border text-left transition-colors ${
+              className={`p-3 rounded-xl border text-left transition-colors backdrop-blur-xl ${
                 rotationWeeks === option.value
-                  ? 'border-blue-500 bg-blue-500/10 text-white'
-                  : 'border-slate-700 text-slate-400 hover:border-slate-500 hover:text-white'
+                  ? 'border-accent-blue/60 bg-accent-blue/10 text-white shadow-glow-accent'
+                  : 'border-glass-border text-slate-400 hover:border-glass-border-strong hover:text-white bg-glass-50'
               }`}
             >
               <p className="font-medium text-sm">{option.label}</p>
@@ -200,25 +201,23 @@ export default function Settings({ org, profile }) {
         {/* Custom weeks input - only shown when Custom is selected */}
         {rotationWeeks === 'custom' && (
           <div>
-            <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">
-              Number of Weeks
-            </label>
-            <input
+            <GlassLabel>Number of Weeks</GlassLabel>
+            <GlassInput
               type="number"
               min="1"
               max="52"
               value={customWeeks}
               onChange={e => setCustomWeeks(e.target.value)}
-              className="w-32 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-32"
               placeholder="e.g. 6"
             />
           </div>
         )}
-      </div>
+      </GlassCard>
 
       {/* Cycle start date - only shown if rotation is more than 1 week */}
       {rotationWeeks !== 1 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <GlassCard className="p-6 space-y-4">
           <div>
             <h3 className="text-white font-semibold">Cycle Start Date</h3>
             <p className="text-slate-400 text-xs mt-1">
@@ -226,17 +225,17 @@ export default function Settings({ org, profile }) {
               All rotation week calculations are based on this date.
             </p>
           </div>
-          <input
+          <GlassInput
             type="date"
             value={cycleStartDate}
             onChange={e => setCycleStartDate(e.target.value)}
-            className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
+            className="w-auto"
           />
-        </div>
+        </GlassCard>
       )}
 
       {/* Working days */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+      <GlassCard className="p-6 space-y-4">
         <div>
           <h3 className="text-white font-semibold">Working Days</h3>
           <p className="text-slate-400 text-xs mt-1">
@@ -249,10 +248,10 @@ export default function Settings({ org, profile }) {
             <button
               key={day}
               onClick={() => toggleDay(day)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all backdrop-blur-xl border ${
                 workingDays[day]
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-gradient-to-b from-accent-blue to-[#3d6fe0] text-white border-white/20 shadow-glow-accent'
+                  : 'bg-glass-50 text-slate-400 hover:text-white border-glass-border'
               }`}
             >
               {/* Show 3-letter abbreviation */}
@@ -260,7 +259,7 @@ export default function Settings({ org, profile }) {
             </button>
           ))}
         </div>
-      </div>
+      </GlassCard>
 
       {/* Error message */}
       {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -271,13 +270,13 @@ export default function Settings({ org, profile }) {
       )}
 
       {/* Save button */}
-      <button
+      <GlassButton
         onClick={handleSave}
         disabled={loading}
-        className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+        className="px-8"
       >
         {loading ? 'Saving...' : 'Save Settings'}
-      </button>
+      </GlassButton>
 
     </div>
   )

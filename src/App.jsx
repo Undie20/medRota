@@ -46,8 +46,11 @@ export default function App() {
 
   // While we're checking login status, show a simple loading screen
   if (loading) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="text-slate-400 text-sm tracking-widest uppercase">Loading...</div>
+    <div className="app-shell-bg min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-8 h-8 rounded-full border-2 border-white/15 border-t-accent-blue animate-spin" />
+        <div className="text-slate-400 text-xs tracking-widest uppercase">Loading</div>
+      </div>
     </div>
   )
 

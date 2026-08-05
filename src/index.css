@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, system-ui, sans-serif;
+
+  --color-glass-50: rgb(255 255 255 / 0.06);
+  --color-glass-100: rgb(255 255 255 / 0.09);
+  --color-glass-200: rgb(255 255 255 / 0.14);
+  --color-glass-border: rgb(255 255 255 / 0.12);
+  --color-glass-border-strong: rgb(255 255 255 / 0.22);
+
+  --color-accent-blue: #4f8bff;
+  --color-accent-violet: #9b6bff;
+
+  --shadow-glass: 0 8px 32px -8px rgb(0 0 0 / 0.45), 0 1px 0 0 rgb(255 255 255 / 0.06) inset;
+  --shadow-glass-lg: 0 24px 64px -16px rgb(0 0 0 / 0.55), 0 1px 0 0 rgb(255 255 255 / 0.08) inset;
+  --shadow-glow-accent: 0 0 0 1px rgb(79 139 255 / 0.4), 0 0 24px 0 rgb(79 139 255 / 0.35);
+}
+
+html, body {
+  font-family: var(--font-sans);
+}
+
+.app-shell-bg {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-shell-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60% 50% at 15% 10%, rgb(79 139 255 / 0.16), transparent 60%),
+    radial-gradient(55% 45% at 85% 15%, rgb(155 107 255 / 0.14), transparent 60%),
+    radial-gradient(70% 60% at 50% 100%, rgb(56 189 178 / 0.08), transparent 60%),
+    #05070d;
+}
+
+.glass-divider {
+  background: linear-gradient(to bottom, transparent, rgb(255 255 255 / 0.14), transparent);
+}

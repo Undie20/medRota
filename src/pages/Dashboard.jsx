@@ -60,7 +60,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
+    <div className="app-shell-bg min-h-screen flex">
       <Sidebar
         currentPage={safePage}
         onNavigate={setCurrentPage}

@@ -5,6 +5,11 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import GlassCard from '../components/ui/GlassCard'
+import GlassButton from '../components/ui/GlassButton'
+import GlassInput from '../components/ui/GlassInput'
+import GlassLabel from '../components/ui/GlassLabel'
+import GlassModal from '../components/ui/GlassModal'
 
 export default function Doctors({ org, profile }) {
   // List of all doctors in this organisation
@@ -149,33 +154,27 @@ export default function Doctors({ org, profile }) {
         </div>
         {/* Only admins can add doctors */}
         {profile?.role === 'admin' && (
-          <button
-            onClick={openAddModal}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
+          <GlassButton onClick={openAddModal} className="px-4 py-2">
             + Add Doctor
-          </button>
+          </GlassButton>
         )}
       </div>
 
       {/* Doctors grid */}
       {doctors.length === 0 ? (
         // Empty state - shown when no doctors have been added yet
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
+        <GlassCard className="p-12 text-center">
           <p className="text-slate-400">No doctors added yet.</p>
-          <button
-            onClick={openAddModal}
-            className="mt-4 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
+          <GlassButton onClick={openAddModal} className="mt-4 px-4 py-2">
             Add your first doctor
-          </button>
-        </div>
+          </GlassButton>
+        </GlassCard>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {doctors.map(doctor => (
-            <div
+            <GlassCard
               key={doctor.id}
-              className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
+              className="p-5 space-y-3"
             >
               {/* Doctor name with colour indicator */}
               <div className="flex items-center justify-between">
@@ -209,7 +208,7 @@ export default function Doctors({ org, profile }) {
 
               {/* Custom fields - displayed as key: value pairs */}
               {Object.entries(doctor.fields || {}).length > 0 && (
-                <div className="space-y-1 border-t border-slate-800 pt-3">
+                <div className="space-y-1 border-t border-glass-border pt-3">
                   {Object.entries(doctor.fields).map(([label, value]) => (
                     <div key={label} className="flex justify-between text-xs">
                       <span className="text-slate-400">{label}</span>
@@ -218,127 +217,116 @@ export default function Doctors({ org, profile }) {
                   ))}
                 </div>
               )}
-            </div>
+            </GlassCard>
           ))}
         </div>
       )}
 
       {/* Add/Edit Modal */}
-      {modalOpen && (
-        // Dark overlay behind the modal
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto">
+      <GlassModal open={modalOpen} onClose={closeModal} className="space-y-4 max-h-[90vh] overflow-y-auto">
 
-            <h3 className="text-white font-bold text-lg">
-              {editingDoctor ? 'Edit Doctor' : 'Add Doctor'}
-            </h3>
+        <h3 className="text-white font-bold text-lg">
+          {editingDoctor ? 'Edit Doctor' : 'Add Doctor'}
+        </h3>
 
-            {/* Doctor name */}
-            <div>
-              <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
-                placeholder="e.g. Dr. Jane Smith"
-              />
-            </div>
+        {/* Doctor name */}
+        <div>
+          <GlassLabel>Full Name</GlassLabel>
+          <GlassInput
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="e.g. Dr. Jane Smith"
+          />
+        </div>
 
-            {/* Colour picker - used to identify this doctor on the calendar */}
-            <div>
-              <label className="text-slate-400 text-xs uppercase tracking-widest block mb-2">
-                Calendar Colour
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={color}
-                  onChange={e => setColor(e.target.value)}
-                  className="w-10 h-10 rounded cursor-pointer bg-transparent border-0"
-                />
-                <span className="text-slate-400 text-sm">
-                  This colour will identify the doctor on the calendar
-                </span>
-              </div>
-            </div>
-
-            {/* Custom fields section */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-slate-400 text-xs uppercase tracking-widest">
-                  Custom Fields
-                </label>
-                <button
-                  onClick={addCustomField}
-                  className="text-blue-400 hover:text-blue-300 text-xs transition-colors"
-                >
-                  + Add Field
-                </button>
-              </div>
-
-              {customFields.length === 0 && (
-                <p className="text-slate-600 text-xs">
-                  Add fields like Specialty, Room, Phone, Provider Number, etc.
-                </p>
-              )}
-
-              {/* Each custom field row */}
-              <div className="space-y-2">
-                {customFields.map((field, index) => (
-                  <div key={index} className="flex gap-2">
-                    {/* Field label e.g. "Specialty" */}
-                    <input
-                      type="text"
-                      value={field.label}
-                      onChange={e => updateCustomField(index, 'label', e.target.value)}
-                      className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                      placeholder="Field name"
-                    />
-                    {/* Field value e.g. "Cardiology" */}
-                    <input
-                      type="text"
-                      value={field.value}
-                      onChange={e => updateCustomField(index, 'value', e.target.value)}
-                      className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                      placeholder="Value"
-                    />
-                    {/* Remove this field */}
-                    <button
-                      onClick={() => removeCustomField(index)}
-                      className="text-slate-400 hover:text-red-400 px-2 transition-colors"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {error && <p className="text-red-400 text-xs">{error}</p>}
-
-            {/* Modal action buttons */}
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg py-3 text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : editingDoctor ? 'Save Changes' : 'Add Doctor'}
-              </button>
-              <button
-                onClick={closeModal}
-                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg py-3 text-sm font-medium transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-
+        {/* Colour picker - used to identify this doctor on the calendar */}
+        <div>
+          <GlassLabel>Calendar Colour</GlassLabel>
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={color}
+              onChange={e => setColor(e.target.value)}
+              className="w-10 h-10 rounded cursor-pointer bg-transparent border-0"
+            />
+            <span className="text-slate-400 text-sm">
+              This colour will identify the doctor on the calendar
+            </span>
           </div>
         </div>
-      )}
+
+        {/* Custom fields section */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <GlassLabel className="mb-0">Custom Fields</GlassLabel>
+            <button
+              onClick={addCustomField}
+              className="text-blue-400 hover:text-blue-300 text-xs transition-colors"
+            >
+              + Add Field
+            </button>
+          </div>
+
+          {customFields.length === 0 && (
+            <p className="text-slate-600 text-xs">
+              Add fields like Specialty, Room, Phone, Provider Number, etc.
+            </p>
+          )}
+
+          {/* Each custom field row */}
+          <div className="space-y-2">
+            {customFields.map((field, index) => (
+              <div key={index} className="flex gap-2">
+                {/* Field label e.g. "Specialty" */}
+                <GlassInput
+                  type="text"
+                  value={field.label}
+                  onChange={e => updateCustomField(index, 'label', e.target.value)}
+                  className="flex-1 px-3 py-2"
+                  placeholder="Field name"
+                />
+                {/* Field value e.g. "Cardiology" */}
+                <GlassInput
+                  type="text"
+                  value={field.value}
+                  onChange={e => updateCustomField(index, 'value', e.target.value)}
+                  className="flex-1 px-3 py-2"
+                  placeholder="Value"
+                />
+                {/* Remove this field */}
+                <button
+                  onClick={() => removeCustomField(index)}
+                  className="text-slate-400 hover:text-red-400 px-2 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {error && <p className="text-red-400 text-xs">{error}</p>}
+
+        {/* Modal action buttons */}
+        <div className="flex gap-3 pt-2">
+          <GlassButton
+            onClick={handleSave}
+            disabled={loading}
+            className="flex-1"
+          >
+            {loading ? 'Saving...' : editingDoctor ? 'Save Changes' : 'Add Doctor'}
+          </GlassButton>
+          <GlassButton
+            variant="secondary"
+            onClick={closeModal}
+            className="flex-1"
+          >
+            Cancel
+          </GlassButton>
+        </div>
+
+      </GlassModal>
 
     </div>
   )
