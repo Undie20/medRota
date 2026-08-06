@@ -5,10 +5,11 @@
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import GlassCard from '../components/ui/GlassCard'
-import GlassInput from '../components/ui/GlassInput'
-import GlassLabel from '../components/ui/GlassLabel'
-import GlassButton from '../components/ui/GlassButton'
+
+const fieldClass =
+  'w-full bg-surface border border-sep rounded-[12px] px-3.5 py-3 text-label text-[15px] placeholder:text-label3 focus:outline-none focus:border-accent transition-colors'
+const fieldLabelClass =
+  'text-label3 text-[11.5px] font-semibold uppercase tracking-[0.07em] block mb-2 pl-1'
 
 export default function Login() {
   // Tracks what the user types into each input field
@@ -39,66 +40,69 @@ export default function Login() {
   }
 
   return (
-    // Full screen gradient-mesh background with everything centred
-    <div className="app-shell-bg min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    // Full screen, grouped-grey background with everything centred
+    <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-[380px]">
 
-        {/* App name and tagline at the top */}
-        <div className="mb-10 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-shine">medRota</h1>
-          <p className="text-slate-400 mt-2 text-sm">Practice scheduling, simplified</p>
+        {/* App mark and tagline at the top */}
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="w-11 h-11 rounded-[12px] bg-accent flex items-center justify-center text-white text-[22px] font-bold mb-3">m</div>
+          <h1 className="text-[24px] font-bold text-label tracking-[-0.03em]">medRota</h1>
+          <p className="text-label2 mt-1 text-[14.5px]">Practice scheduling, simplified</p>
         </div>
 
         {/* The login card */}
-        <GlassCard className="glass-panel--deep p-8 space-y-5">
+        <div className="bg-surface border border-sep rounded-[18px] shadow-ios p-6 flex flex-col gap-4">
 
           {/* Email input field */}
           <div>
-            <GlassLabel>Email</GlassLabel>
-            <GlassInput
+            <label className={fieldLabelClass}>Email</label>
+            <input
               type="email"
               value={email}
               // Every keystroke updates the email state
               onChange={e => setEmail(e.target.value)}
+              className={fieldClass}
               placeholder="you@example.com"
             />
           </div>
 
           {/* Password input field */}
           <div>
-            <GlassLabel>Password</GlassLabel>
-            <GlassInput
+            <label className={fieldLabelClass}>Password</label>
+            <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               // Pressing Enter triggers sign in so the user doesn't have to click the button
               onKeyDown={e => e.key === 'Enter' && handleSignIn()}
+              className={fieldClass}
               placeholder="••••••••"
             />
           </div>
 
           {/* Error message - only shown if login fails */}
           {error && (
-            <p className="text-red-400 text-xs">{error}</p>
+            <p className="text-red-500 text-[13px] px-1">{error}</p>
           )}
 
           {/* Sign in button */}
           {/* disabled={loading} prevents double-clicking while waiting */}
-          <GlassButton
+          <button
             onClick={handleSignIn}
             disabled={loading}
-            className="w-full"
+            className="w-full h-11 bg-accent hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[15px] font-semibold rounded-[12px] transition-all"
           >
             {/* Button text changes while loading so the user knows something is happening */}
             {loading ? 'Signing in...' : 'Sign In'}
-          </GlassButton>
+          </button>
 
           {/* Small note at the bottom - no register link, intentionally */}
-          <p className="text-slate-500 text-xs text-center">
+          <p className="text-label3 text-[12.5px] text-center">
             Contact your administrator if you need access.
           </p>
 
-        </GlassCard>
+        </div>
       </div>
     </div>
   )

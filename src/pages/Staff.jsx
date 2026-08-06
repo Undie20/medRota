@@ -1,11 +1,11 @@
 // Staff.jsx
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import GlassCard from '../components/ui/GlassCard'
-import GlassButton from '../components/ui/GlassButton'
-import GlassInput from '../components/ui/GlassInput'
-import GlassLabel from '../components/ui/GlassLabel'
-import GlassModal from '../components/ui/GlassModal'
+
+const fieldClass =
+  'w-full bg-surface border border-sep rounded-[12px] px-3.5 py-3 text-label text-[15px] placeholder:text-label3 focus:outline-none focus:border-accent transition-colors'
+const fieldLabelClass =
+  'text-label3 text-[11.5px] font-semibold uppercase tracking-[0.07em] block mb-2 pl-1'
 
 export default function Staff({ org, profile }) {
   const [staffList, setStaffList] = useState([])
@@ -169,74 +169,74 @@ export default function Staff({ org, profile }) {
   }, {})
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-8">
 
       {/* ── App Users (org members) — admin only ── */}
       {profile?.role === 'admin' && (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white">Team Access</h2>
-            <p className="text-slate-400 text-sm mt-1">Invite and manage who can log in to this organisation</p>
+            <h2 className="text-[22px] font-bold text-label tracking-[-0.03em]">Team Access</h2>
+            <p className="text-label2 text-[14px] mt-1">Invite and manage who can log in to this organisation</p>
           </div>
 
           {/* Invite bar */}
-          <GlassCard className="p-5 space-y-3">
-            <p className="text-slate-400 text-xs uppercase tracking-widest">Invite a new user</p>
+          <div className="bg-surface border border-sep rounded-[16px] shadow-ios p-4 flex flex-col gap-3">
+            <p className="text-label3 text-[11.5px] font-semibold uppercase tracking-[0.07em]">Invite a new user</p>
             <div className="flex gap-3">
-              <GlassInput
+              <input
                 type="email"
                 value={inviteEmail}
                 onChange={e => { setInviteEmail(e.target.value); setInviteError(''); setInviteSuccess('') }}
                 onKeyDown={e => e.key === 'Enter' && handleInvite()}
                 placeholder="email@example.com"
-                className="flex-1 px-4 py-2.5"
+                className={`${fieldClass} flex-1 px-4 py-2.5`}
               />
-              <GlassButton
+              <button
                 onClick={handleInvite}
                 disabled={inviteLoading || !inviteEmail.trim()}
-                className="px-4 py-2.5 whitespace-nowrap"
+                className="h-11 px-4 bg-accent hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[14px] font-semibold rounded-[12px] transition-all whitespace-nowrap"
               >
                 {inviteLoading ? 'Sending...' : 'Send Invite'}
-              </GlassButton>
+              </button>
             </div>
-            {inviteError && <p className="text-red-400 text-xs">{inviteError}</p>}
-            {inviteSuccess && <p className="text-green-400 text-xs">{inviteSuccess}</p>}
-          </GlassCard>
+            {inviteError && <p className="text-red-500 text-[12.5px]">{inviteError}</p>}
+            {inviteSuccess && <p className="text-emerald-600 dark:text-emerald-400 text-[12.5px]">{inviteSuccess}</p>}
+          </div>
 
           {/* Members list */}
-          <GlassCard className="overflow-hidden">
+          <div className="bg-surface border border-sep rounded-[16px] shadow-ios overflow-hidden">
             {members.length === 0 ? (
-              <p className="text-slate-400 text-sm p-5">No members yet.</p>
+              <p className="text-label2 text-[14px] p-5">No members yet.</p>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-[13.5px]">
                 <thead>
-                  <tr className="border-b border-glass-border">
-                    <th className="text-left text-slate-400 text-xs uppercase tracking-widest px-5 py-3">Name</th>
-                    <th className="text-left text-slate-400 text-xs uppercase tracking-widest px-5 py-3">Role</th>
+                  <tr className="border-b border-sep">
+                    <th className="text-left text-label3 text-[11px] font-semibold uppercase tracking-[0.07em] px-5 py-3">Name</th>
+                    <th className="text-left text-label3 text-[11px] font-semibold uppercase tracking-[0.07em] px-5 py-3">Role</th>
                     <th className="px-5 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {members.map(member => (
-                    <tr key={member.id} className="border-b border-glass-border last:border-0">
-                      <td className="px-5 py-3 text-white">
+                    <tr key={member.id} className="border-b border-sep last:border-0">
+                      <td className="px-5 py-3 text-label">
                         {member.first_name || member.last_name
                           ? `${member.first_name} ${member.last_name}`.trim()
-                          : <span className="text-slate-500 italic">No name set</span>
+                          : <span className="text-label3 italic">No name set</span>
                         }
                         {member.id === profile.id && (
-                          <span className="ml-2 text-xs text-slate-500">(you)</span>
+                          <span className="ml-2 text-[12px] text-label3">(you)</span>
                         )}
                       </td>
                       <td className="px-5 py-3">
                         {member.id === profile.id ? (
                           // Can't change your own role
-                          <span className="text-blue-400 text-xs font-medium capitalize">{member.role}</span>
+                          <span className="text-accent text-[12.5px] font-medium capitalize">{member.role}</span>
                         ) : (
                           <select
                             value={member.role}
                             onChange={e => handleRoleChange(member.id, e.target.value)}
-                            className="bg-glass-50 border border-glass-border rounded-lg px-3 py-1.5 text-white text-xs backdrop-blur-xl focus:outline-none focus:border-accent-blue/60"
+                            className="bg-fill border border-sep rounded-[9px] px-3 py-1.5 text-label text-[12.5px] focus:outline-none focus:border-accent transition-colors"
                           >
                             <option value="staff">Staff</option>
                             <option value="admin">Admin</option>
@@ -247,7 +247,7 @@ export default function Staff({ org, profile }) {
                         {member.id !== profile.id && (
                           <button
                             onClick={() => handleRemoveMember(member.id)}
-                            className="text-slate-500 hover:text-red-400 text-xs transition-colors"
+                            className="text-label3 hover:text-red-500 text-[12.5px] font-medium transition-colors"
                           >
                             Remove
                           </button>
@@ -258,64 +258,70 @@ export default function Staff({ org, profile }) {
                 </tbody>
               </table>
             )}
-          </GlassCard>
+          </div>
         </div>
       )}
 
       {/* ── Staff (clinic staff for scheduling) ── */}
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">Staff</h2>
-            <p className="text-slate-400 text-sm mt-1">Manage nurses, receptionists and other staff</p>
+            <h2 className="text-[22px] font-bold text-label tracking-[-0.03em]">Staff</h2>
+            <p className="text-label2 text-[14px] mt-1">Manage nurses, receptionists and other staff</p>
           </div>
           {profile?.role === 'admin' && (
-            <GlassButton onClick={openAddModal} className="px-4 py-2">
+            <button
+              onClick={openAddModal}
+              className="h-9 px-4 bg-accent hover:brightness-110 text-white text-[14px] font-semibold rounded-[10px] transition-all"
+            >
               + Add Staff
-            </GlassButton>
+            </button>
           )}
         </div>
 
         {staffList.length === 0 ? (
-          <GlassCard className="p-12 text-center">
-            <p className="text-slate-400">No staff added yet.</p>
+          <div className="bg-surface border border-sep rounded-[18px] shadow-ios p-12 text-center">
+            <p className="text-label2 text-[15px]">No staff added yet.</p>
             {profile?.role === 'admin' && (
-              <GlassButton onClick={openAddModal} className="mt-4 px-4 py-2">
+              <button
+                onClick={openAddModal}
+                className="mt-4 h-9 px-4 bg-accent hover:brightness-110 text-white text-[14px] font-semibold rounded-[10px] transition-all"
+              >
                 Add your first staff member
-              </GlassButton>
+              </button>
             )}
-          </GlassCard>
+          </div>
         ) : (
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             {Object.entries(groupedStaff).map(([groupRole, members]) => (
               <div key={groupRole}>
-                <h3 className="text-slate-400 text-xs uppercase tracking-widest mb-3">{groupRole}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <h3 className="text-label3 text-[11px] font-semibold uppercase tracking-[0.07em] mb-3">{groupRole}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   {members.map(member => (
-                    <GlassCard key={member.id} className="p-5 space-y-3">
+                    <div key={member.id} className="bg-surface border border-sep rounded-[16px] shadow-ios p-4 flex flex-col gap-3">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: member.color || '#10b981' }} />
-                          <h3 className="text-white font-semibold">{member.name}</h3>
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-[9px] h-[9px] rounded-full shrink-0" style={{ backgroundColor: member.color || '#10b981' }} />
+                          <h3 className="text-label font-semibold text-[15px] tracking-[-0.01em]">{member.name}</h3>
                         </div>
                         {profile?.role === 'admin' && (
-                          <div className="flex gap-2">
-                            <button onClick={() => openEditModal(member)} className="text-slate-400 hover:text-white text-xs transition-colors">Edit</button>
-                            <button onClick={() => handleDelete(member.id)} className="text-slate-400 hover:text-red-400 text-xs transition-colors">Delete</button>
+                          <div className="flex gap-3">
+                            <button onClick={() => openEditModal(member)} className="text-label2 hover:text-accent text-[12.5px] font-medium transition-colors">Edit</button>
+                            <button onClick={() => handleDelete(member.id)} className="text-label2 hover:text-red-500 text-[12.5px] font-medium transition-colors">Delete</button>
                           </div>
                         )}
                       </div>
                       {Object.entries(member.fields || {}).length > 0 && (
-                        <div className="space-y-1 border-t border-glass-border pt-3">
+                        <div className="flex flex-col gap-1 border-t border-sep pt-3">
                           {Object.entries(member.fields).map(([label, value]) => (
-                            <div key={label} className="flex justify-between text-xs">
-                              <span className="text-slate-400">{label}</span>
-                              <span className="text-slate-300">{value}</span>
+                            <div key={label} className="flex justify-between text-[12.5px]">
+                              <span className="text-label3">{label}</span>
+                              <span className="text-label2">{value}</span>
                             </div>
                           ))}
                         </div>
                       )}
-                    </GlassCard>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -325,66 +331,84 @@ export default function Staff({ org, profile }) {
       </div>
 
       {/* Add/Edit Modal */}
-      <GlassModal open={modalOpen} onClose={closeModal} className="space-y-4 max-h-[90vh] overflow-y-auto">
-        <h3 className="text-white font-bold text-lg">
-          {editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}
-        </h3>
+      {modalOpen && (
+        <div
+          onClick={closeModal}
+          className="fixed inset-0 bg-black/35 flex items-center justify-center z-50 p-6 animate-fade-in"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-bg rounded-[22px] shadow-sheet w-full max-w-[440px] max-h-[88vh] overflow-y-auto animate-sheet-in"
+          >
+            {/* Sheet header — Cancel / title / Save, iOS style */}
+            <div className="sticky top-0 z-10 bg-bg border-b border-sep flex items-center justify-between px-[18px] pt-4 pb-3">
+              <button onClick={closeModal} className="text-accent text-[15.5px]">Cancel</button>
+              <h3 className="text-label text-[16px] font-semibold tracking-[-0.02em]">
+                {editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}
+              </h3>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="text-accent text-[15.5px] font-semibold disabled:opacity-40"
+              >
+                {loading ? 'Saving...' : 'Save'}
+              </button>
+            </div>
 
-        <div>
-          <GlassLabel>Full Name</GlassLabel>
-          <GlassInput type="text" value={name} onChange={e => setName(e.target.value)}
-            placeholder="e.g. Jane Smith" />
-        </div>
+            <div className="p-[18px] flex flex-col gap-5">
 
-        <div>
-          <GlassLabel>Role</GlassLabel>
-          <GlassInput type="text" value={role} onChange={e => setRole(e.target.value)}
-            placeholder="e.g. Nurse, Receptionist, Practice Manager" />
-        </div>
-
-        <div>
-          <GlassLabel>Calendar Colour</GlassLabel>
-          <div className="flex items-center gap-3">
-            <input type="color" value={color} onChange={e => setColor(e.target.value)}
-              className="w-10 h-10 rounded cursor-pointer bg-transparent border-0" />
-            <span className="text-slate-400 text-sm">Used to identify this staff member on the schedule</span>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <GlassLabel className="mb-0">Custom Fields</GlassLabel>
-            <button onClick={addCustomField} className="text-blue-400 hover:text-blue-300 text-xs transition-colors">+ Add Field</button>
-          </div>
-          {customFields.length === 0 && (
-            <p className="text-slate-600 text-xs">Add fields like Phone, Email, Qualification, etc.</p>
-          )}
-          <div className="space-y-2">
-            {customFields.map((field, index) => (
-              <div key={index} className="flex gap-2">
-                <GlassInput type="text" value={field.label} onChange={e => updateCustomField(index, 'label', e.target.value)}
-                  className="flex-1 px-3 py-2"
-                  placeholder="Field name" />
-                <GlassInput type="text" value={field.value} onChange={e => updateCustomField(index, 'value', e.target.value)}
-                  className="flex-1 px-3 py-2"
-                  placeholder="Value" />
-                <button onClick={() => removeCustomField(index)} className="text-slate-400 hover:text-red-400 px-2 transition-colors">✕</button>
+              <div>
+                <label className={fieldLabelClass}>Full Name</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)}
+                  className={fieldClass}
+                  placeholder="e.g. Jane Smith" />
               </div>
-            ))}
+
+              <div>
+                <label className={fieldLabelClass}>Role</label>
+                <input type="text" value={role} onChange={e => setRole(e.target.value)}
+                  className={fieldClass}
+                  placeholder="e.g. Nurse, Receptionist, Practice Manager" />
+              </div>
+
+              <div>
+                <label className={fieldLabelClass}>Calendar Colour</label>
+                <div className="flex items-center gap-3">
+                  <input type="color" value={color} onChange={e => setColor(e.target.value)}
+                    className="w-10 h-10 rounded-[10px] cursor-pointer bg-transparent border-0" />
+                  <span className="text-label2 text-[13.5px]">Used to identify this staff member on the schedule</span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className={`${fieldLabelClass} mb-0`}>Custom Fields</label>
+                  <button onClick={addCustomField} className="text-accent text-[12.5px] font-medium transition-opacity hover:opacity-70">+ Add Field</button>
+                </div>
+                {customFields.length === 0 && (
+                  <p className="text-label3 text-[13px] pl-1">Add fields like Phone, Email, Qualification, etc.</p>
+                )}
+                <div className="flex flex-col gap-2">
+                  {customFields.map((field, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input type="text" value={field.label} onChange={e => updateCustomField(index, 'label', e.target.value)}
+                        className={`${fieldClass} flex-1 px-3 py-2`}
+                        placeholder="Field name" />
+                      <input type="text" value={field.value} onChange={e => updateCustomField(index, 'value', e.target.value)}
+                        className={`${fieldClass} flex-1 px-3 py-2`}
+                        placeholder="Value" />
+                      <button onClick={() => removeCustomField(index)} className="text-label3 hover:text-red-500 px-2 transition-colors">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {error && <p className="text-red-500 text-[13px] px-1">{error}</p>}
+
+            </div>
           </div>
         </div>
-
-        {error && <p className="text-red-400 text-xs">{error}</p>}
-
-        <div className="flex gap-3 pt-2">
-          <GlassButton onClick={handleSave} disabled={loading} className="flex-1">
-            {loading ? 'Saving...' : editingStaff ? 'Save Changes' : 'Add Staff Member'}
-          </GlassButton>
-          <GlassButton variant="secondary" onClick={closeModal} className="flex-1">
-            Cancel
-          </GlassButton>
-        </div>
-      </GlassModal>
+      )}
     </div>
   )
 }

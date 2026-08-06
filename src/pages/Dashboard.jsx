@@ -3,7 +3,6 @@
 // whichever page the user navigates to.
 // Think of it like a picture frame - the sidebar stays the same,
 // only the content in the middle changes.
-// Dashboard.jsx
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Sidebar from '../components/Sidebar'
@@ -17,6 +16,14 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState('schedule')
   const [profile, setProfile] = useState(null)
   const [org, setOrg] = useState(null)
+
+  // Appearance: 'light' or 'dark'. Remembered between visits.
+  const [theme, setTheme] = useState(() => localStorage.getItem('medrota-theme') || 'light')
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+    localStorage.setItem('medrota-theme', theme)
+  }, [theme])
 
   const fetchProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -60,7 +67,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="app-shell-bg min-h-screen flex">
+    <div className="min-h-screen bg-bg text-label flex">
       <Sidebar
         currentPage={safePage}
         onNavigate={setCurrentPage}
@@ -68,8 +75,8 @@ export default function Dashboard() {
         profile={profile}
       />
       <div className="flex-1 flex flex-col min-w-0">
-        <TopBar org={org} profile={profile} />
-        <main className="flex-1 p-6 overflow-auto">
+        <TopBar org={org} profile={profile} theme={theme} onToggleTheme={setTheme} />
+        <main className="flex-1 p-[26px] overflow-auto">
           {renderPage()}
         </main>
       </div>

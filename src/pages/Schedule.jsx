@@ -9,11 +9,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { parseCommand } from '../lib/commandParser'
-import GlassCard from '../components/ui/GlassCard'
-import GlassButton from '../components/ui/GlassButton'
-import GlassInput from '../components/ui/GlassInput'
-import GlassLabel from '../components/ui/GlassLabel'
-import GlassModal from '../components/ui/GlassModal'
 import {
   getRotationWeek,
   getWeekDates,
@@ -483,6 +478,13 @@ export default function Schedule({ org, profile }) {
     await fetchSlots()
   }
 
+  // ─── SHARED STYLES ────────────────────────────────────────────────
+
+  const fieldClass =
+    'w-full bg-surface border border-sep rounded-[12px] px-3.5 py-3 text-label text-[15px] placeholder:text-label3 focus:outline-none focus:border-accent transition-colors'
+  const fieldLabelClass =
+    'text-label3 text-[11.5px] font-semibold uppercase tracking-[0.07em] block mb-2 pl-1'
+
   // ─── RENDER HELPERS ───────────────────────────────────────────────
 
   // date param is optional — when provided, checks one-off exceptions for that date
@@ -490,29 +492,43 @@ export default function Schedule({ org, profile }) {
     const doctor = getDoctorForSlot(slot)
     const assignedStaff = getStaffForSlot(slot.id)
     const isCancelled = isSlotCancelledOnDate(slot, date)
+    const color = doctor?.color || '#007AFF'
 
     return (
       <div
         key={slot.id}
         onClick={(e) => { e.stopPropagation(); openEditModal(slot) }}
-        className={`rounded-lg p-2 cursor-pointer text-xs space-y-0.5 backdrop-blur-xl border border-white/5 transition-all ${
-          isCancelled ? 'opacity-40 line-through' : 'hover:-translate-y-0.5 hover:brightness-110'
+        className={`rounded-[12px] px-[11px] py-2.5 cursor-pointer transition-all active:scale-[0.98] ${
+          isCancelled ? 'opacity-55' : 'hover:brightness-[1.03]'
         }`}
         style={{
-          backgroundColor: (doctor?.color || '#3b82f6') + '2b',
-          borderLeft: `3px solid ${doctor?.color || '#3b82f6'}`
+          backgroundColor: color + '18',
+          boxShadow: `inset 0 0 0 1px ${color}26`,
         }}
       >
-        <p className="font-semibold text-white truncate">{doctor?.name || 'Unknown'}</p>
-        {slot.slot_label && <p className="text-slate-300 truncate">{slot.slot_label}</p>}
-        {slot.start_time && <p className="text-slate-400">{slot.start_time} – {slot.end_time}</p>}
-        {slot.location && <p className="text-slate-400 truncate">📍 {slot.location}</p>}
-        {assignedStaff.length > 0 && (
-          <p className="text-slate-400 truncate">
-            👤 {assignedStaff.map(s => s.name).join(', ')}
+        <div className="flex items-center gap-[7px]">
+          <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ backgroundColor: color }} />
+          <p className="text-[13px] font-semibold text-label tracking-[-0.01em] truncate">
+            {doctor?.name || 'Unknown'}
+          </p>
+        </div>
+        {slot.slot_label && <p className="text-[12.5px] text-label2 mt-0.5 truncate">{slot.slot_label}</p>}
+        {slot.start_time && (
+          <p className="text-[12.5px] text-label2 tabular-nums whitespace-nowrap">
+            {slot.start_time} – {slot.end_time}
           </p>
         )}
-        {isCancelled && <p className="text-red-400 font-medium">CANCELLED</p>}
+        {slot.location && <p className="text-[12px] text-label3 mt-0.5 truncate">{slot.location}</p>}
+        {assignedStaff.length > 0 && (
+          <p className="text-[12px] text-label3 truncate">
+            {assignedStaff.map(s => s.name).join(', ')}
+          </p>
+        )}
+        {isCancelled && (
+          <span className="inline-block mt-1.5 px-[7px] py-0.5 rounded-md bg-red-500/15 text-red-500 text-[10.5px] font-semibold uppercase tracking-[0.05em]">
+            Cancelled
+          </span>
+        )}
       </div>
     )
   }
@@ -525,16 +541,14 @@ export default function Schedule({ org, profile }) {
       <div
         key={`${dayName}-${weekNumber}`}
         onClick={() => openAddModal(dayName, weekNumber)}
-        className={`min-h-24 p-2 rounded-xl border backdrop-blur-xl cursor-pointer transition-colors space-y-1 ${
-          isToday
-            ? 'border-accent-blue/50 bg-accent-blue/5'
-            : 'border-glass-border bg-glass-50 hover:border-glass-border-strong'
+        className={`min-h-[300px] p-2 rounded-[16px] border bg-surface shadow-ios cursor-pointer transition-colors flex flex-col gap-[7px] ${
+          isToday ? 'border-accent' : 'border-sep hover:border-label3'
         }`}
       >
         {cellSlots.map(slot => renderSlotCard(slot, date))}
-        {cellSlots.length === 0 && (
-          <p className="text-slate-700 text-xs text-center pt-4">+ Add</p>
-        )}
+        <button className="text-label3 text-[13px] py-2 rounded-[10px] hover:bg-fill hover:text-accent transition-colors">
+          + Add
+        </button>
       </div>
     )
   }
@@ -549,28 +563,28 @@ export default function Schedule({ org, profile }) {
     return (
       <div>
         <div
-          className="grid gap-2 mb-2"
-          style={{ gridTemplateColumns: `repeat(${activeWeekDates.length}, 1fr)` }}
+          className="grid gap-3 mb-[9px]"
+          style={{ gridTemplateColumns: `repeat(${activeWeekDates.length}, minmax(0, 1fr))` }}
         >
           {activeWeekDates.map(date => (
-            <div key={date.toISOString()} className="text-center">
-              <p className="text-slate-400 text-xs uppercase tracking-widest">
+            <div key={date.toISOString()} className="flex items-baseline gap-[7px] pl-1">
+              <span className="text-label3 text-[11px] font-semibold uppercase tracking-[0.07em]">
                 {getDayName(date).slice(0, 3)}
-              </p>
-              <p className={`text-sm font-semibold mt-0.5 ${
-                isSameDay(date, today) ? 'text-blue-400' : 'text-white'
+              </span>
+              <span className={`text-[19px] font-bold tracking-[-0.03em] ${
+                isSameDay(date, today) ? 'text-accent' : 'text-label'
               }`}>
                 {date.getDate()}
-              </p>
+              </span>
               {rotationWeeks > 1 && (
-                <p className="text-slate-600 text-xs">Wk {getWeekNum(date)}</p>
+                <span className="text-label3 text-[11px]">Wk {getWeekNum(date)}</span>
               )}
             </div>
           ))}
         </div>
         <div
-          className="grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${activeWeekDates.length}, 1fr)` }}
+          className="grid gap-3"
+          style={{ gridTemplateColumns: `repeat(${activeWeekDates.length}, minmax(0, 1fr))` }}
         >
           {activeWeekDates.map(date => {
             const weekNum = getWeekNum(date)
@@ -590,36 +604,36 @@ export default function Schedule({ org, profile }) {
     const daySlots = getSlotsForDate(currentDate)
 
     return (
-      <div className="max-w-lg">
-        <div className={`rounded-xl border backdrop-blur-xl bg-glass-50 p-4 space-y-2 ${
-          isToday ? 'border-accent-blue/50' : 'border-glass-border'
+      <div className="max-w-[560px] flex flex-col gap-3">
+        {rotationWeeks > 1 && weekNum && (
+          <p className="text-accent text-[12px] font-semibold uppercase tracking-[0.07em]">
+            Rotation Week {weekNum}
+          </p>
+        )}
+        <div className={`rounded-[18px] border bg-surface shadow-ios p-4 flex flex-col gap-2.5 ${
+          isToday ? 'border-accent' : 'border-sep'
         }`}>
-          {rotationWeeks > 1 && weekNum && (
-            <p className="text-blue-400 text-xs font-medium uppercase tracking-widest">
-              Rotation Week {weekNum}
-            </p>
-          )}
           {daySlots.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-400 text-sm">No clinics scheduled</p>
+              <p className="text-label2 text-[15px]">No clinics scheduled</p>
               <button
                 onClick={() => openAddModal(dayName, weekNum || 1)}
-                className="mt-3 text-blue-400 text-sm hover:text-blue-300"
+                className="mt-3 text-accent text-[15px] font-medium hover:opacity-70 transition-opacity"
               >
                 + Add a slot
               </button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <>
               {/* Pass currentDate so exceptions are checked for this specific date */}
               {daySlots.map(slot => renderSlotCard(slot, currentDate))}
               <button
                 onClick={() => openAddModal(dayName, weekNum || 1)}
-                className="w-full text-slate-600 hover:text-slate-400 text-xs py-2 border border-dashed border-glass-border rounded-lg transition-colors"
+                className="w-full text-label3 hover:text-accent hover:border-accent text-[13.5px] py-3 border border-dashed border-sep rounded-[12px] transition-colors"
               >
                 + Add slot
               </button>
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -631,15 +645,15 @@ export default function Schedule({ org, profile }) {
     const today = new Date()
 
     return (
-      <div>
-        <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="bg-surface border border-sep rounded-[18px] shadow-ios p-3.5">
+        <div className="grid grid-cols-7 gap-1.5 mb-1.5">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-            <div key={d} className="text-center text-slate-500 text-xs py-1 uppercase tracking-widest">
+            <div key={d} className="text-center text-label3 text-[11px] font-semibold py-1 uppercase tracking-[0.07em]">
               {d}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1.5">
           {monthDates.map(date => {
             const dayName = getDayName(date)
             const weekNum = getWeekNum(date)
@@ -652,15 +666,16 @@ export default function Schedule({ org, profile }) {
               <div
                 key={date.toISOString()}
                 onClick={() => isActive && openAddModal(dayName, weekNum || 1)}
-                className={`min-h-16 p-1 rounded-lg border backdrop-blur-xl text-xs transition-colors ${
-                  isToday ? 'border-accent-blue/50 bg-accent-blue/5' :
-                  isCurrentMonth && isActive
-                    ? 'border-glass-border bg-glass-50 hover:border-glass-border-strong cursor-pointer'
-                    : 'border-transparent'
-                } ${!isCurrentMonth ? 'opacity-30' : ''}`}
+                className={`min-h-[78px] p-1.5 rounded-[12px] border text-[12px] transition-colors ${
+                  isToday
+                    ? 'border-accent bg-accent/10'
+                    : isCurrentMonth && isActive
+                      ? 'border-transparent bg-bg hover:border-label3 cursor-pointer'
+                      : 'border-transparent'
+                } ${!isCurrentMonth ? 'opacity-35' : ''}`}
               >
-                <p className={`font-medium mb-1 ${
-                  isToday ? 'text-blue-400' : 'text-slate-400'
+                <p className={`text-[13px] mb-1 ${
+                  isToday ? 'text-accent font-bold' : 'text-label2 font-medium'
                 }`}>
                   {date.getDate()}
                 </p>
@@ -670,8 +685,10 @@ export default function Schedule({ org, profile }) {
                   return (
                     <div
                       key={slot.id}
-                      className={`rounded px-1 py-0.5 mb-0.5 truncate text-white ${isCancelled ? 'opacity-40 line-through' : ''}`}
-                      style={{ backgroundColor: doctor?.color || '#3b82f6' }}
+                      className={`rounded-md px-1.5 py-0.5 mb-0.5 truncate text-white text-[11px] font-medium ${
+                        isCancelled ? 'opacity-40 line-through' : ''
+                      }`}
+                      style={{ backgroundColor: doctor?.color || '#007AFF' }}
                       onClick={(e) => { e.stopPropagation(); openEditModal(slot) }}
                     >
                       {doctor?.name?.split(' ').pop()}
@@ -679,7 +696,7 @@ export default function Schedule({ org, profile }) {
                   )
                 })}
                 {daySlots.length > 2 && (
-                  <p className="text-slate-500">+{daySlots.length - 2} more</p>
+                  <p className="text-label3 text-[11px]">+{daySlots.length - 2} more</p>
                 )}
               </div>
             )
@@ -702,230 +719,242 @@ export default function Schedule({ org, profile }) {
 
   return (
     <div className="flex gap-4 h-full">
-      <div className="flex-1 space-y-4 min-w-0">
+      <div className="flex-1 flex flex-col gap-[18px] min-w-0">
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3.5">
+          <div className="flex items-center gap-3">
+            <div className="flex gap-0.5 p-0.5 bg-fill rounded-[10px]">
               <button
                 onClick={() => setCurrentDate(navigateDate(currentDate, -1, view))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-glass-50 border border-glass-border backdrop-blur-xl hover:bg-glass-100 text-white transition-colors"
+                className="w-[30px] h-7 flex items-center justify-center rounded-lg text-label2 text-[17px] leading-none hover:bg-surface hover:text-label transition-colors"
               >‹</button>
               <button
-                onClick={() => setCurrentDate(new Date())}
-                className="px-3 py-1.5 rounded-lg bg-glass-50 border border-glass-border backdrop-blur-xl hover:bg-glass-100 text-white text-xs font-medium transition-colors"
-              >Today</button>
-              <button
                 onClick={() => setCurrentDate(navigateDate(currentDate, 1, view))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-glass-50 border border-glass-border backdrop-blur-xl hover:bg-glass-100 text-white transition-colors"
+                className="w-[30px] h-7 flex items-center justify-center rounded-lg text-label2 text-[17px] leading-none hover:bg-surface hover:text-label transition-colors"
               >›</button>
-              <h2 className="text-white font-semibold text-sm">{getViewTitle()}</h2>
             </div>
-            <div className="flex items-center gap-2">
-              {['day', 'week', 'month'].map(v => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all backdrop-blur-xl border ${
-                    view === v
-                      ? 'bg-gradient-to-b from-accent-blue to-[#3f5fc4] text-white border-white/20 shadow-glow-accent'
-                      : 'bg-glass-50 text-slate-400 hover:text-white border-glass-border'
-                  }`}
-                >{v}</button>
-              ))}
-            </div>
+            <button
+              onClick={() => setCurrentDate(new Date())}
+              className="h-8 px-3.5 rounded-[10px] bg-surface border border-sep text-label text-[13.5px] font-medium hover:bg-fill transition-colors"
+            >Today</button>
+            <h2 className="text-label text-[22px] font-bold tracking-[-0.03em]">{getViewTitle()}</h2>
           </div>
+          <div className="flex p-0.5 bg-fill rounded-[10px]">
+            {['day', 'week', 'month'].map(v => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`h-7 px-3.5 rounded-lg text-[13.5px] capitalize transition-colors ${
+                  view === v
+                    ? 'bg-surface text-label font-semibold shadow-sm'
+                    : 'text-label2 font-medium hover:text-label'
+                }`}
+              >{v}</button>
+            ))}
+          </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <GlassInput
+        <div>
+          <div className="flex items-center gap-2.5 bg-surface border border-sep rounded-[14px] shadow-ios pl-3.5 pr-1.5 py-1.5 focus-within:border-accent transition-colors">
+            <span className="text-accent text-[15px]">✦</span>
+            <input
               type="text"
               value={aiInput}
               onChange={e => { setAiInput(e.target.value); setAiError('') }}
               onKeyDown={e => e.key === 'Enter' && handleAiParse()}
-              placeholder='✦ e.g. "Dr Andy is away Friday" or "Dr Andy has a clinic every Friday 9am-5pm at Brisbane Radiology, Athauv is taking care of it"'
-              className="flex-1 px-4 py-2"
+              placeholder='e.g. "Dr Andy is away Friday" or "Dr Andy has a clinic every Friday 9am-5pm at Brisbane Radiology, Athauv is taking care of it"'
+              className="flex-1 min-w-0 bg-transparent border-0 text-label text-[14.5px] placeholder:text-label3 focus:outline-none py-[7px] truncate"
             />
-            <GlassButton
+            <button
               onClick={handleAiParse}
               disabled={aiLoading || !aiInput.trim()}
-              className="px-4 py-2 whitespace-nowrap"
-            >{aiLoading ? 'Working...' : 'Run'}</GlassButton>
+              className="h-[34px] px-[18px] bg-accent hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[14px] font-semibold rounded-[10px] transition-all whitespace-nowrap"
+            >{aiLoading ? 'Working...' : 'Run'}</button>
           </div>
-          {aiError && <p className="text-red-400 text-xs px-1">{aiError}</p>}
+          {aiError && <p className="text-red-500 text-[12.5px] px-1 mt-2">{aiError}</p>}
         </div>
 
         {!scheduleConfig && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 backdrop-blur-xl rounded-xl p-4">
-            <p className="text-yellow-400 text-sm">
-              ⚠️ No schedule config found. Go to Settings to configure your rotation.
+          <div className="bg-amber-500/10 border border-amber-500/25 rounded-[14px] px-4 py-3.5">
+            <p className="text-amber-600 dark:text-amber-400 text-[14px]">
+              No schedule config found. Go to Settings to configure your rotation.
             </p>
           </div>
         )}
 
-        <div className="rounded-xl">
+        <div>
           {view === 'day' && renderDayView()}
           {view === 'week' && renderWeekView()}
           {view === 'month' && renderMonthView()}
         </div>
       </div>
 
-      <GlassModal open={modalOpen} onClose={closeModal} className="space-y-4 max-h-[90vh] overflow-y-auto">
-
-        <h3 className="text-white font-bold text-lg">
-          {selectedSlot
-            ? 'Edit Slot'
-            : `Add Slot — ${formDayOfWeek}${rotationWeeks > 1 ? ` (Week ${formWeekNumber})` : ''}`
-          }
-        </h3>
-
-            <div>
-              <GlassLabel>Doctor</GlassLabel>
-              <GlassInput
-                as="select"
-                value={formDoctorId}
-                onChange={e => setFormDoctorId(e.target.value)}
-              >
-                <option value="">Select a doctor</option>
-                {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </GlassInput>
-            </div>
-
-            {rotationWeeks > 1 && (
-              <div>
-                <GlassLabel>Rotation Week</GlassLabel>
-                <GlassInput
-                  as="select"
-                  value={formWeekNumber}
-                  onChange={e => setFormWeekNumber(parseInt(e.target.value))}
-                >
-                  {Array.from({ length: rotationWeeks }, (_, i) => i + 1).map(w => (
-                    <option key={w} value={w}>Week {w}</option>
-                  ))}
-                </GlassInput>
-              </div>
-            )}
-
-            <div>
-              <GlassLabel>Day</GlassLabel>
-              <GlassInput
-                as="select"
-                value={formDayOfWeek}
-                onChange={e => setFormDayOfWeek(e.target.value)}
-              >
-                {activeDays.map(d => <option key={d} value={d}>{d}</option>)}
-              </GlassInput>
-            </div>
-
-            <div>
-              <GlassLabel>Clinic Label</GlassLabel>
-              <GlassInput
-                type="text"
-                value={formLabel}
-                onChange={e => setFormLabel(e.target.value)}
-                placeholder="e.g. Morning Clinic, Ward Round, Telehealth"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <GlassLabel>Start</GlassLabel>
-                <GlassInput
-                  type="time"
-                  value={formStartTime}
-                  onChange={e => setFormStartTime(e.target.value)}
-                />
-              </div>
-              <div>
-                <GlassLabel>End</GlassLabel>
-                <GlassInput
-                  type="time"
-                  value={formEndTime}
-                  onChange={e => setFormEndTime(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div>
-              <GlassLabel>Location</GlassLabel>
-              <GlassInput
-                type="text"
-                value={formLocation}
-                onChange={e => setFormLocation(e.target.value)}
-                placeholder="e.g. Room 3B, Brisbane Radiology"
-              />
-            </div>
-
-            <div>
-              <GlassLabel>Assign Staff</GlassLabel>
-              {staffList.length === 0 ? (
-                <p className="text-slate-600 text-xs">No staff added yet.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {staffList.map(member => (
-                    <button
-                      key={member.id}
-                      onClick={() => toggleStaff(member.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl border transition-colors ${
-                        formStaffIds.includes(member.id) ? 'text-white border-white/20' : 'bg-glass-50 border-glass-border text-slate-400 hover:text-white'
-                      }`}
-                      style={formStaffIds.includes(member.id) ? { backgroundColor: member.color } : {}}
-                    >
-                      {member.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <GlassLabel>Notes</GlassLabel>
-              <GlassInput
-                as="textarea"
-                value={formNotes}
-                onChange={e => setFormNotes(e.target.value)}
-                className="resize-none"
-                rows={2}
-                placeholder="Any additional notes..."
-              />
-            </div>
-
-            {formError && <p className="text-red-400 text-xs">{formError}</p>}
-
-            <div className="flex gap-3 pt-2">
-              <GlassButton
+      {modalOpen && (
+        <div
+          onClick={closeModal}
+          className="fixed inset-0 bg-black/35 flex items-center justify-center z-50 p-6 animate-fade-in"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-bg rounded-[22px] shadow-sheet w-full max-w-[440px] max-h-[88vh] overflow-y-auto animate-sheet-in"
+          >
+            {/* Sheet header — Cancel / title / Save, iOS style */}
+            <div className="sticky top-0 z-10 bg-bg border-b border-sep flex items-center justify-between px-[18px] pt-4 pb-3">
+              <button onClick={closeModal} className="text-accent text-[15.5px]">Cancel</button>
+              <h3 className="text-label text-[16px] font-semibold tracking-[-0.02em]">
+                {selectedSlot
+                  ? 'Edit Slot'
+                  : `Add Slot${rotationWeeks > 1 ? ` · Week ${formWeekNumber}` : ''}`
+                }
+              </h3>
+              <button
                 onClick={handleSaveSlot}
                 disabled={formLoading}
-                className="flex-1"
+                className="text-accent text-[15.5px] font-semibold disabled:opacity-40"
               >
-                {formLoading ? 'Saving...' : selectedSlot ? 'Save Changes' : 'Add Slot'}
-              </GlassButton>
-              <GlassButton
-                variant="secondary"
-                onClick={closeModal}
-                className="flex-1"
-              >
-                Cancel
-              </GlassButton>
+                {formLoading ? 'Saving...' : 'Save'}
+              </button>
             </div>
 
-            {selectedSlot && (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleCancelSlot(selectedSlot.id)}
-                  className="flex-1 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 rounded-lg py-2 text-xs font-medium transition-colors"
-                >
-                  {selectedSlot.is_cancelled ? 'Restore Slot' : 'Mark Cancelled'}
-                </button>
-                <button
-                  onClick={() => handleDeleteSlot(selectedSlot.id)}
-                  className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg py-2 text-xs font-medium transition-colors"
-                >
-                  Delete Slot
-                </button>
-              </div>
-            )}
+            <div className="p-[18px] flex flex-col gap-5">
 
-      </GlassModal>
+              <div>
+                <label className={fieldLabelClass}>Doctor</label>
+                <select
+                  value={formDoctorId}
+                  onChange={e => setFormDoctorId(e.target.value)}
+                  className={fieldClass}
+                >
+                  <option value="">Select a doctor</option>
+                  {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+
+              {rotationWeeks > 1 && (
+                <div>
+                  <label className={fieldLabelClass}>Rotation Week</label>
+                  <select
+                    value={formWeekNumber}
+                    onChange={e => setFormWeekNumber(parseInt(e.target.value))}
+                    className={fieldClass}
+                  >
+                    {Array.from({ length: rotationWeeks }, (_, i) => i + 1).map(w => (
+                      <option key={w} value={w}>Week {w}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className={fieldLabelClass}>Day</label>
+                <select
+                  value={formDayOfWeek}
+                  onChange={e => setFormDayOfWeek(e.target.value)}
+                  className={fieldClass}
+                >
+                  {activeDays.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className={fieldLabelClass}>Clinic Label</label>
+                <input
+                  type="text"
+                  value={formLabel}
+                  onChange={e => setFormLabel(e.target.value)}
+                  className={fieldClass}
+                  placeholder="e.g. Morning Clinic, Ward Round, Telehealth"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={fieldLabelClass}>Start</label>
+                  <input
+                    type="time"
+                    value={formStartTime}
+                    onChange={e => setFormStartTime(e.target.value)}
+                    className={fieldClass}
+                  />
+                </div>
+                <div>
+                  <label className={fieldLabelClass}>End</label>
+                  <input
+                    type="time"
+                    value={formEndTime}
+                    onChange={e => setFormEndTime(e.target.value)}
+                    className={fieldClass}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={fieldLabelClass}>Location</label>
+                <input
+                  type="text"
+                  value={formLocation}
+                  onChange={e => setFormLocation(e.target.value)}
+                  className={fieldClass}
+                  placeholder="e.g. Room 3B, Brisbane Radiology"
+                />
+              </div>
+
+              <div>
+                <label className={fieldLabelClass}>Assign Staff</label>
+                {staffList.length === 0 ? (
+                  <p className="text-label3 text-[13px] pl-1">No staff added yet.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-[7px]">
+                    {staffList.map(member => (
+                      <button
+                        key={member.id}
+                        onClick={() => toggleStaff(member.id)}
+                        className={`h-8 px-3.5 rounded-[9px] text-[13.5px] font-medium transition-colors ${
+                          formStaffIds.includes(member.id) ? 'text-white' : 'bg-fill text-label2 hover:text-label'
+                        }`}
+                        style={formStaffIds.includes(member.id) ? { backgroundColor: member.color } : {}}
+                      >
+                        {member.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className={fieldLabelClass}>Notes</label>
+                <textarea
+                  value={formNotes}
+                  onChange={e => setFormNotes(e.target.value)}
+                  className={`${fieldClass} resize-none`}
+                  rows={2}
+                  placeholder="Any additional notes..."
+                />
+              </div>
+
+              {formError && <p className="text-red-500 text-[13px] px-1">{formError}</p>}
+
+              {selectedSlot && (
+                <div className="flex gap-2.5">
+                  <button
+                    onClick={() => handleCancelSlot(selectedSlot.id)}
+                    className="flex-1 h-11 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 rounded-[13px] text-[14.5px] font-semibold transition-colors"
+                  >
+                    {selectedSlot.is_cancelled ? 'Restore Slot' : 'Mark Cancelled'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSlot(selectedSlot.id)}
+                    className="flex-1 h-11 bg-red-500/15 hover:bg-red-500/25 text-red-500 rounded-[13px] text-[14.5px] font-semibold transition-colors"
+                  >
+                    Delete Slot
+                  </button>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
