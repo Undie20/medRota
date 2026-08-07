@@ -246,10 +246,11 @@ export default function Schedule({ org, profile }) {
           return
         }
 
-        // Find which slots match this doctor + day + rotation week
+        // Find which slots match this doctor + day(s) + rotation week
+        // daysOfWeek covers multi-day commands like "Monday and Wednesday"
         const toCancel = slots.filter(s =>
           s.doctor_id === result.doctor.id &&
-          (!result.dayOfWeek || s.day_of_week === result.dayOfWeek) &&
+          (!result.daysOfWeek?.length || result.daysOfWeek.includes(s.day_of_week)) &&
           (rotationWeeks === 1 || s.week_number === result.rotationWeekNum)
         )
 
@@ -290,7 +291,7 @@ export default function Schedule({ org, profile }) {
 
         const toRestore = slots.filter(s =>
           s.doctor_id === result.doctor.id &&
-          (!result.dayOfWeek || s.day_of_week === result.dayOfWeek) &&
+          (!result.daysOfWeek?.length || result.daysOfWeek.includes(s.day_of_week)) &&
           (rotationWeeks === 1 || s.week_number === result.rotationWeekNum)
         )
 
@@ -344,13 +345,14 @@ export default function Schedule({ org, profile }) {
       // interval — e.g. "Dr Andy has a clinic every Friday" hits every
       // rotation week, but "every 3rd week" or "fortnightly" only hits
       // the weeks that pattern actually lands on (see getTargetWeeks).
+      // Also covers multiple days at once, e.g. "every Monday and Wednesday"
       if (result.intent === 'add_recurring') {
         if (!result.doctor) {
           setAiError('Could not find that doctor.')
           setAiLoading(false)
           return
         }
-        if (!result.dayOfWeek) {
+        if (!result.daysOfWeek?.length) {
           setAiError('Could not find a day in that command.')
           setAiLoading(false)
           return
@@ -358,28 +360,30 @@ export default function Schedule({ org, profile }) {
 
         const targetWeeks = getTargetWeeks(rotationWeeks, result.interval, result.startWeek)
 
-        // Insert one slot per target week
+        // Insert one slot per target week, per mentioned day
         const insertedSlotIds = []
-        for (const week of targetWeeks) {
-          const { data, error } = await supabase
-            .from('schedule_slots')
-            .insert({
-              org_id: org.id,
-              doctor_id: result.doctor.id,
-              // Only store week_number if rotation is more than 1 week
-              week_number: rotationWeeks > 1 ? week : null,
-              day_of_week: result.dayOfWeek,
-              slot_label: result.slotLabel || '',
-              location: result.location || '',
-              start_time: result.startTime || '09:00',
-              end_time: result.endTime || '17:00',
-              is_cancelled: false,
-            })
-            .select()
-            .single()
+        for (const dayOfWeek of result.daysOfWeek) {
+          for (const week of targetWeeks) {
+            const { data, error } = await supabase
+              .from('schedule_slots')
+              .insert({
+                org_id: org.id,
+                doctor_id: result.doctor.id,
+                // Only store week_number if rotation is more than 1 week
+                week_number: rotationWeeks > 1 ? week : null,
+                day_of_week: dayOfWeek,
+                slot_label: result.slotLabel || '',
+                location: result.location || '',
+                start_time: result.startTime || '09:00',
+                end_time: result.endTime || '17:00',
+                is_cancelled: false,
+              })
+              .select()
+              .single()
 
-          if (!error && data) {
-            insertedSlotIds.push(data.id)
+            if (!error && data) {
+              insertedSlotIds.push(data.id)
+            }
           }
         }
 

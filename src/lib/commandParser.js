@@ -7,7 +7,7 @@
 // - "Restore Dr Aundy's Monday clinic"
 
 import { getWeekDates, getDayName, getRotationWeek } from './scheduleUtils'
-import { addWeeks } from 'date-fns'
+import { addWeeks, addDays } from 'date-fns'
 
 // All the day name variations we recognise
 const DAY_ALIASES = {
@@ -21,11 +21,16 @@ const DAY_ALIASES = {
 }
 
 // All day-name words (and abbreviations), longest first so e.g. "thursday"
-// matches before "thu" would — used to stop location matching at a day name
-// like "...at Brisbane Radiology Thursday 9am-4pm"
+// matches before "thu" would — used both to stop location matching at a day
+// name (e.g. "...at Brisbane Radiology Thursday 9am-4pm") and to find days
 const DAY_WORDS_PATTERN = Object.keys(DAY_ALIASES)
   .sort((a, b) => b.length - a.length)
   .join('|')
+
+// Matches every day word in a string, in order, allowing a trailing "s"
+// for plurals (e.g. "Fridays"). Global so it finds ALL days mentioned,
+// not just the first — needed for "Monday and Wednesday" style commands.
+const ALL_DAYS_REGEX = new RegExp(`\\b(${DAY_WORDS_PATTERN})s?\\b`, 'gi')
 
 // Converts "9am", "9:30am", "14:00" etc into "HH:MM" 24hr format
 function parseTime(str) {
@@ -52,15 +57,33 @@ function parseTime(str) {
   return null
 }
 
-// Finds a day name in a string e.g. "this Friday" → "Friday"
-// Also matches plural forms like "Fridays" (as in "every Fridays" / "on Fridays")
-function extractDay(text) {
+// Finds every day name mentioned in a string, in the order they appear,
+// with duplicates removed. Handles plurals ("Fridays") and multi-day
+// commands like "Monday and Wednesday" or "Mon, Wed & Fri".
+function extractDays(text) {
   const lower = text.toLowerCase()
-  for (const [alias, fullName] of Object.entries(DAY_ALIASES)) {
-    // Match as a whole word using word boundaries, allowing an optional trailing "s"
-    const regex = new RegExp(`\\b${alias}s?\\b`)
-    if (regex.test(lower)) return fullName
+  const found = []
+  ALL_DAYS_REGEX.lastIndex = 0 // it's a shared regex object — always reset before reuse
+  let match
+  while ((match = ALL_DAYS_REGEX.exec(lower)) !== null) {
+    const canonical = DAY_ALIASES[match[1]]
+    if (canonical && !found.includes(canonical)) found.push(canonical)
   }
+  return found
+}
+
+// Finds the first day name in a string e.g. "this Friday" → "Friday"
+// Kept for call sites that only care about a single day
+function extractDay(text) {
+  return extractDays(text)[0] || null
+}
+
+// "today" / "tomorrow" resolve straight to a specific date rather than
+// a day-of-week name, since they're relative to right now, not the week grid
+function resolveRelativeDate(text, currentDate) {
+  const lower = text.toLowerCase()
+  if (/\btomorrow\b/.test(lower)) return addDays(currentDate, 1)
+  if (/\btoday\b/.test(lower)) return currentDate
   return null
 }
 
@@ -101,27 +124,75 @@ function extractStartWeek(text) {
   return match ? parseInt(match[1], 10) : null
 }
 
+// Standard edit-distance calculation — how many single-character
+// insertions/deletions/substitutions turn string a into string b
+function levenshtein(a, b) {
+  const m = a.length
+  const n = b.length
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+    }
+  }
+  return dp[m][n]
+}
+
 // Fuzzy matches a name fragment against a list of objects with a .name property
 // e.g. "Arvind" matches "Dr Arvind Sharma"
+// Tries, in order: exact substring, shared word, then typo tolerance so a
+// small misspelling like "Andyy" or "Aundy" still finds "Dr Andy"
 function fuzzyMatchName(fragment, list) {
   if (!fragment) return null
   const lower = fragment.toLowerCase().trim()
-  // Try exact substring match first
+
+  // 1. Exact substring match
   const exact = list.find(item => item.name.toLowerCase().includes(lower))
   if (exact) return exact
-  // Try matching any word in the fragment against any word in the name
+
   const words = lower.split(/\s+/).filter(w => w.length > 2)
-  return list.find(item => {
+
+  // 2. Any word in the fragment appears in / contains any word in the name
+  const wordMatch = list.find(item => {
     const nameWords = item.name.toLowerCase().split(/\s+/)
     return words.some(w => nameWords.some(nw => nw.includes(w) || w.includes(nw)))
-  }) || null
+  })
+  if (wordMatch) return wordMatch
+
+  // 3. Typo tolerance — small edit distance against any word in the name.
+  // Threshold scales with word length so short names aren't matched too loosely.
+  let best = null
+  let bestDistance = Infinity
+  for (const item of list) {
+    const nameWords = item.name.toLowerCase().split(/\s+/)
+    for (const w of words.length ? words : [lower]) {
+      for (const nw of nameWords) {
+        if (Math.abs(nw.length - w.length) > 2) continue
+        const distance = levenshtein(w, nw)
+        const threshold = nw.length <= 4 ? 1 : 2
+        if (distance <= threshold && distance < bestDistance) {
+          bestDistance = distance
+          best = item
+        }
+      }
+    }
+  }
+  return best
 }
 
-// Works out which specific dates are affected by "this week", "next week" etc
-// relative to the currentDate (what the user is viewing)
+// Works out which specific dates are affected by "this week", "next week",
+// or "next <day>" (e.g. "next Friday" means the Friday of next week, even
+// without the word "week" showing up) — relative to the currentDate
+// (what the user is viewing)
+const NEXT_DAY_REGEX = new RegExp(`next\\s+(?:${DAY_WORDS_PATTERN})s?\\b`, 'i')
+
 function resolveWeekDates(text, currentDate) {
   const lower = text.toLowerCase()
-  if (lower.includes('next week')) {
+  if (lower.includes('next week') || NEXT_DAY_REGEX.test(lower)) {
     return getWeekDates(addWeeks(currentDate, 1))
   }
   // "this week" or no week qualifier = the week currently being viewed
@@ -144,13 +215,24 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
     lower.includes('not working') ||
     lower.includes('off') ||
     lower.includes('sick') ||
-    lower.includes('leave')
+    lower.includes('leave') ||
+    lower.includes('unavailable') ||
+    lower.includes("won't be in") ||
+    lower.includes('wont be in') ||
+    lower.includes('out of office') ||
+    lower.includes('day off') ||
+    lower.includes('taking the day')
 
   const isRestore =
     lower.includes('back') ||
     lower.includes('restore') ||
     lower.includes('uncance') ||
-    lower.includes('returning')
+    lower.includes('returning') ||
+    lower.includes('reinstate') ||
+    lower.includes('available again') ||
+    lower.includes('no longer away') ||
+    lower.includes('no longer sick') ||
+    lower.includes('no longer off')
 
   const isAdd =
     lower.includes('has a clinic') ||
@@ -158,7 +240,12 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
     lower.includes('new clinic') ||
     lower.includes('schedule') ||
     lower.includes('working at') ||
-    lower.includes('clinic at')
+    lower.includes('clinic at') ||
+    lower.includes('book') ||
+    lower.includes('put on') ||
+    lower.includes('set up a clinic') ||
+    lower.includes('is covering') ||
+    lower.includes('is doing a clinic')
   // Detects if the user wants to add a recurring slot across all rotation weeks
   const isRecurring =
     lower.includes('every') ||
@@ -207,8 +294,12 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
     }
   }
 
-  // ── EXTRACT DAY ────────────────────────────────────────────────────
-  const dayOfWeek = extractDay(lower)
+  // ── EXTRACT DAY(S) ─────────────────────────────────────────────────
+  // "today"/"tomorrow" resolve to a specific date directly; otherwise
+  // pick up every day name mentioned, e.g. "Monday and Wednesday"
+  const relativeDate = resolveRelativeDate(lower, currentDate)
+  const daysOfWeek = relativeDate ? [getDayName(relativeDate)] : extractDays(lower)
+  const dayOfWeek = daysOfWeek[0] || null
 
   // ── EXTRACT TIME ───────────────────────────────────────────────────
   // Supports "9am-4pm", "9am to 4pm", "9:30am-5pm" etc
@@ -274,15 +365,20 @@ for (const label of knownLabels) {
   }
 }
   // ── RESOLVE WHICH DATES ARE AFFECTED ──────────────────────────────
-  // "this week" = current view week, "next week" = next week
+  // "this week" = current view week, "next week"/"next <day>" = next week
 
   const affectedWeekDates = resolveWeekDates(lower, currentDate)
 
-  // Work out which specific date is affected (if a day was mentioned)
-  let affectedDate = null
-  if (dayOfWeek) {
-    affectedDate = affectedWeekDates.find(d => getDayName(d) === dayOfWeek) || null
-  }
+  // Work out which specific date(s) are affected. "today"/"tomorrow" map
+  // straight to a date; otherwise look up each mentioned day within the
+  // resolved week. affectedDate is kept as the first one for call sites
+  // that only handle a single day (e.g. the one-off "add" modal).
+  const affectedDates = relativeDate
+    ? [relativeDate]
+    : daysOfWeek
+        .map(d => affectedWeekDates.find(wd => getDayName(wd) === d))
+        .filter(Boolean)
+  const affectedDate = affectedDates[0] || null
 
   // Work out the rotation week number for the affected date
   const rotationWeekNum = affectedDate
@@ -295,10 +391,12 @@ for (const label of knownLabels) {
     return {
       intent: 'cancel',
       doctor: matchedDoctor,
-      dayOfWeek,
-      affectedDate,       // the specific calendar date (for one-off cancellations)
+      dayOfWeek,          // first affected day (kept for backward compatibility)
+      daysOfWeek,         // ALL affected days, e.g. ["Monday", "Wednesday"]
+      affectedDate,       // first affected calendar date
+      affectedDates,       // every affected calendar date
       rotationWeekNum,    // which rotation week this falls in
-      wholeWeek: !dayOfWeek, // if no day mentioned, cancel the whole week
+      wholeWeek: daysOfWeek.length === 0, // if no day mentioned, cancel the whole week
       affectedWeekDates,
     }
   }
@@ -308,9 +406,11 @@ for (const label of knownLabels) {
       intent: 'restore',
       doctor: matchedDoctor,
       dayOfWeek,
+      daysOfWeek,
       affectedDate,
+      affectedDates,
       rotationWeekNum,
-      wholeWeek: !dayOfWeek,
+      wholeWeek: daysOfWeek.length === 0,
       affectedWeekDates,
     }
   }
@@ -325,6 +425,7 @@ for (const label of knownLabels) {
       intent: isRecurring ? 'add_recurring' : 'add',
       doctor: matchedDoctor,
       dayOfWeek,
+      daysOfWeek, // add_recurring loops over every day mentioned, e.g. "Mondays and Wednesdays"
       startTime,
       endTime,
       location,
