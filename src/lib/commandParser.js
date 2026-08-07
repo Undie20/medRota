@@ -91,37 +91,105 @@ function resolveRelativeDate(text, currentDate) {
 // "every third week" or "every second week"
 const NUMBER_WORDS = {
   first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6,
+  seventh: 7, eighth: 8, ninth: 9, tenth: 10, eleventh: 11, twelfth: 12,
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+  seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
 }
 
 // Works out how often a recurring slot repeats, in rotation weeks.
-// "every Friday" / no qualifier = 1 (every week)
-// "fortnightly" / "every other week" / "every 2nd week" = 2
-// "every 3rd week" / "every three weeks" = 3, etc.
+// Covers as many real-world phrasings as we could think of:
+// - "every Friday" / no qualifier / "weekly" / "each week" / "once a week" = 1
+// - "fortnightly" / "fortnighly"/"forthnightly" (typos) / "biweekly" /
+//   "bi-weekly" / "every other week" / "every other Friday" / "every 2nd
+//   week" / "every second Friday" / "alternate weeks" / "alternating
+//   weeks" / "every couple of weeks" = 2
+// - "every 3rd week" / "every third week" / "every three weeks" / "every
+//   third Friday" / "every few weeks" (approximate) = 3
+// - "every Nth week" / "every N weeks" / "N-weekly" / "every Nth <day>",
+//   numeric or spelled-out, for any N
 function extractInterval(text) {
   const lower = text.toLowerCase()
 
-  if (lower.includes('fortnightly') || lower.includes('biweekly') || lower.includes('every other week')) {
+  // Phrases that always mean "every 2 weeks", regardless of typos or
+  // whether a day name or the word "week" follows
+  if (
+    lower.includes('fortnightly') ||
+    lower.includes('fortnighly') ||      // common typo
+    lower.includes('forthnightly') ||    // common typo
+    lower.includes('forthnighly') ||     // common typo
+    lower.includes('biweekly') ||
+    lower.includes('bi-weekly') ||
+    lower.includes('bi weekly') ||
+    lower.includes('every other') ||         // "every other week/Friday/Monday"
+    lower.includes('every alternate') ||
+    lower.includes('alternate week') ||
+    lower.includes('alternating week') ||
+    lower.includes('on alternate weeks') ||
+    lower.includes('every couple of weeks') ||
+    lower.includes('every couple weeks') ||
+    lower.includes('a couple of weeks') ||
+    lower.includes('once every other week') ||
+    lower.includes('once every 2 weeks') ||
+    lower.includes('once every two weeks')
+  ) {
     return 2
   }
 
-  // "every 3rd week", "every 3 weeks"
-  const numMatch = lower.match(/every\s+(\d+)(?:st|nd|rd|th)?\s+weeks?/)
+  // Vague "every few weeks" — no exact number given, 3 is a reasonable
+  // middle-ground default rather than failing to recognise it at all
+  if (lower.includes('few weeks')) {
+    return 3
+  }
+
+  const numberWordsPattern = Object.keys(NUMBER_WORDS).join('|')
+
+  // "every 3rd week", "every 3 weeks", "every 3-week cycle", "every 3rd Friday"
+  const numMatch = lower.match(new RegExp(
+    `every\\s+(\\d+)(?:st|nd|rd|th)?[\\s-]+(?:weeks?|${DAY_WORDS_PATTERN}s?)\\b`
+  ))
   if (numMatch) return parseInt(numMatch[1], 10)
 
-  // "every third week", "every second week"
-  const wordMatch = lower.match(/every\s+(first|second|third|fourth|fifth|sixth|one|two|three|four|five|six)\s+weeks?/)
+  // "every third week", "every second Friday", "every fourth Monday"
+  const wordMatch = lower.match(new RegExp(
+    `every\\s+\\b(${numberWordsPattern})\\b\\s+(?:weeks?|${DAY_WORDS_PATTERN}s?)\\b`
+  ))
   if (wordMatch) return NUMBER_WORDS[wordMatch[1]]
+
+  // "N-weekly" / "N weekly" (e.g. "4-weekly", "2 weekly") — British convention
+  const weeklyMatch = lower.match(/\b(\d+)[\s-]?weekly\b/)
+  if (weeklyMatch) return parseInt(weeklyMatch[1], 10)
+
+  // "on a 2 week cycle", "on a 2-week cycle", "a two week cycle"
+  const cycleNumMatch = lower.match(/(\d+)[\s-]?weeks?\s+cycle/)
+  if (cycleNumMatch) return parseInt(cycleNumMatch[1], 10)
+
+  const cycleWordMatch = lower.match(new RegExp(`\\b(${numberWordsPattern})\\b[\\s-]?weeks?\\s+cycle`))
+  if (cycleWordMatch) return NUMBER_WORDS[cycleWordMatch[1]]
+
+  // "once every N weeks" / "repeats every N weeks" / "recurring every N
+  // weeks" all contain "every N week(s)" as a substring, so numMatch /
+  // wordMatch above already catch them — nothing extra needed here.
 
   return 1
 }
 
-// Looks for an explicit "starting week N" / "starting from week N" override
+// Looks for an explicit override of which week the pattern starts from:
+// "starting week N", "starting from week N", "start on week N",
+// "beginning week N", "from week N onwards", "week N onwards"
 // Returns null if not specified, so the caller can fall back to a sensible default
 function extractStartWeek(text) {
   const lower = text.toLowerCase()
-  const match = lower.match(/start(?:ing)?\s+(?:from\s+)?week\s+(\d+)/)
-  return match ? parseInt(match[1], 10) : null
+  const patterns = [
+    /start(?:ing)?\s+(?:from\s+|on\s+)?week\s+(\d+)/,
+    /begin(?:ning)?\s+(?:from\s+|on\s+)?week\s+(\d+)/,
+    /from\s+week\s+(\d+)\s+onwards?/,
+    /week\s+(\d+)\s+onwards?/,
+  ]
+  for (const pattern of patterns) {
+    const match = lower.match(pattern)
+    if (match) return parseInt(match[1], 10)
+  }
+  return null
 }
 
 // Standard edit-distance calculation — how many single-character
@@ -251,8 +319,26 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
     lower.includes('every') ||
     lower.includes('each') ||
     lower.includes('fortnightly') ||
+    lower.includes('fortnighly') ||
+    lower.includes('forthnightly') ||
+    lower.includes('forthnighly') ||
     lower.includes('biweekly') ||
+    lower.includes('bi-weekly') ||
+    lower.includes('bi weekly') ||
     lower.includes('weekly') ||
+    lower.includes('once a week') ||
+    lower.includes('once every') ||
+    lower.includes('alternate week') ||
+    lower.includes('alternating week') ||
+    lower.includes('recurring') ||
+    lower.includes('repeats every') ||
+    lower.includes('repeat every') ||
+    lower.includes('on a rotation') ||
+    lower.includes('couple of weeks') ||
+    lower.includes('few weeks') ||
+    lower.includes('week cycle') ||
+    lower.includes('weekly cycle') ||
+    /\d+[\s-]?weeks?\s+cycle/.test(lower) ||
     lower.includes('all fridays') ||
     lower.includes('all mondays') ||
     lower.includes('all tuesdays') ||
@@ -329,7 +415,7 @@ let location = null
 
 // Try "clinic at X" first — more specific
 const clinicAtMatch = text.match(new RegExp(
-  `clinic\\s+at\\s+([A-Za-z][A-Za-z0-9\\s]+?)(?:\\s+(?:on|from|this|next|\\d|(?:${DAY_WORDS_PATTERN})s?\\b)|,|$)`, 'i'
+  `clinic\\s+at\\s+([A-Za-z][A-Za-z0-9\\s]+?)(?:\\s+(?:on|from|this|next|every|each|fortnightly|biweekly|weekly|starting|start|recurring|repeats?|\\d|(?:${DAY_WORDS_PATTERN})s?\\b)|,|$)`, 'i'
 ))
 if (clinicAtMatch) {
   location = clinicAtMatch[1].trim()
@@ -338,7 +424,7 @@ if (clinicAtMatch) {
 // Fall back to plain "at X" — but exclude time expressions like "at 9am"
 if (!location) {
   const atMatch = text.match(new RegExp(
-    `\\bat\\s+([A-Za-z][A-Za-z\\s]+?)(?:\\s+(?:on|from|this|next|\\d|(?:${DAY_WORDS_PATTERN})s?\\b)|,|$)`, 'i'
+    `\\bat\\s+([A-Za-z][A-Za-z\\s]+?)(?:\\s+(?:on|from|this|next|every|each|fortnightly|biweekly|weekly|starting|start|recurring|repeats?|\\d|(?:${DAY_WORDS_PATTERN})s?\\b)|,|$)`, 'i'
   ))
   if (atMatch) {
     const candidate = atMatch[1].trim()
