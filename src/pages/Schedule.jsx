@@ -561,7 +561,18 @@ export default function Schedule({ org, profile }) {
     const today = new Date()
 
     return (
-      <div>
+      <div className="relative">
+        <button
+          onClick={() => setCurrentDate(navigateDate(currentDate, -1, view))}
+          aria-label="Previous week"
+          className="hidden md:flex absolute left-[-20px] top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center rounded-full bg-surface border border-sep shadow-ios text-label2 text-[18px] leading-none hover:bg-fill hover:text-label transition-colors z-10"
+        >‹</button>
+        <button
+          onClick={() => setCurrentDate(navigateDate(currentDate, 1, view))}
+          aria-label="Next week"
+          className="hidden md:flex absolute right-[-20px] top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center rounded-full bg-surface border border-sep shadow-ios text-label2 text-[18px] leading-none hover:bg-fill hover:text-label transition-colors z-10"
+        >›</button>
+
         <div
           className="grid gap-3 mb-[9px]"
           style={{ gridTemplateColumns: `repeat(${activeWeekDates.length}, minmax(0, 1fr))` }}
