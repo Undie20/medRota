@@ -21,6 +21,7 @@ import {
   getDayName,
   isSameDay,
   isSameMonth,
+  getTargetWeeks,
 } from '../lib/scheduleUtils'
 
 export default function Schedule({ org, profile }) {
@@ -339,9 +340,10 @@ export default function Schedule({ org, profile }) {
       }
 
       // ── ADD RECURRING ─────────────────────────────────────────────
-      // Adds a slot for EVERY rotation week on the specified day
-      // e.g. "Dr Andy has a clinic every Friday" inserts a slot for
-      // week 1 Friday, week 2 Friday, week 3 Friday, week 4 Friday
+      // Adds a slot across the rotation weeks that match the requested
+      // interval — e.g. "Dr Andy has a clinic every Friday" hits every
+      // rotation week, but "every 3rd week" or "fortnightly" only hits
+      // the weeks that pattern actually lands on (see getTargetWeeks).
       if (result.intent === 'add_recurring') {
         if (!result.doctor) {
           setAiError('Could not find that doctor.')
@@ -354,9 +356,11 @@ export default function Schedule({ org, profile }) {
           return
         }
 
-        // Insert one slot per rotation week
+        const targetWeeks = getTargetWeeks(rotationWeeks, result.interval, result.startWeek)
+
+        // Insert one slot per target week
         const insertedSlotIds = []
-        for (let week = 1; week <= rotationWeeks; week++) {
+        for (const week of targetWeeks) {
           const { data, error } = await supabase
             .from('schedule_slots')
             .insert({

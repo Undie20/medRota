@@ -20,6 +20,13 @@ const DAY_ALIASES = {
   sunday: 'Sunday', sun: 'Sunday',
 }
 
+// All day-name words (and abbreviations), longest first so e.g. "thursday"
+// matches before "thu" would — used to stop location matching at a day name
+// like "...at Brisbane Radiology Thursday 9am-4pm"
+const DAY_WORDS_PATTERN = Object.keys(DAY_ALIASES)
+  .sort((a, b) => b.length - a.length)
+  .join('|')
+
 // Converts "9am", "9:30am", "14:00" etc into "HH:MM" 24hr format
 function parseTime(str) {
   if (!str) return null
@@ -46,14 +53,52 @@ function parseTime(str) {
 }
 
 // Finds a day name in a string e.g. "this Friday" → "Friday"
+// Also matches plural forms like "Fridays" (as in "every Fridays" / "on Fridays")
 function extractDay(text) {
   const lower = text.toLowerCase()
   for (const [alias, fullName] of Object.entries(DAY_ALIASES)) {
-    // Match as a whole word using word boundaries
-    const regex = new RegExp(`\\b${alias}\\b`)
+    // Match as a whole word using word boundaries, allowing an optional trailing "s"
+    const regex = new RegExp(`\\b${alias}s?\\b`)
     if (regex.test(lower)) return fullName
   }
   return null
+}
+
+// Word forms for small numbers, used in interval phrases like
+// "every third week" or "every second week"
+const NUMBER_WORDS = {
+  first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6,
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+}
+
+// Works out how often a recurring slot repeats, in rotation weeks.
+// "every Friday" / no qualifier = 1 (every week)
+// "fortnightly" / "every other week" / "every 2nd week" = 2
+// "every 3rd week" / "every three weeks" = 3, etc.
+function extractInterval(text) {
+  const lower = text.toLowerCase()
+
+  if (lower.includes('fortnightly') || lower.includes('biweekly') || lower.includes('every other week')) {
+    return 2
+  }
+
+  // "every 3rd week", "every 3 weeks"
+  const numMatch = lower.match(/every\s+(\d+)(?:st|nd|rd|th)?\s+weeks?/)
+  if (numMatch) return parseInt(numMatch[1], 10)
+
+  // "every third week", "every second week"
+  const wordMatch = lower.match(/every\s+(first|second|third|fourth|fifth|sixth|one|two|three|four|five|six)\s+weeks?/)
+  if (wordMatch) return NUMBER_WORDS[wordMatch[1]]
+
+  return 1
+}
+
+// Looks for an explicit "starting week N" / "starting from week N" override
+// Returns null if not specified, so the caller can fall back to a sensible default
+function extractStartWeek(text) {
+  const lower = text.toLowerCase()
+  const match = lower.match(/start(?:ing)?\s+(?:from\s+)?week\s+(\d+)/)
+  return match ? parseInt(match[1], 10) : null
 }
 
 // Fuzzy matches a name fragment against a list of objects with a .name property
@@ -118,6 +163,9 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
   const isRecurring =
     lower.includes('every') ||
     lower.includes('each') ||
+    lower.includes('fortnightly') ||
+    lower.includes('biweekly') ||
+    lower.includes('weekly') ||
     lower.includes('all fridays') ||
     lower.includes('all mondays') ||
     lower.includes('all tuesdays') ||
@@ -189,14 +237,18 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
 let location = null
 
 // Try "clinic at X" first — more specific
-const clinicAtMatch = text.match(/clinic\s+at\s+([A-Za-z][A-Za-z0-9\s]+?)(?:\s+(?:on|from|this|next|\d)|,|$)/i)
+const clinicAtMatch = text.match(new RegExp(
+  `clinic\\s+at\\s+([A-Za-z][A-Za-z0-9\\s]+?)(?:\\s+(?:on|from|this|next|\\d|(?:${DAY_WORDS_PATTERN})s?\\b)|,|$)`, 'i'
+))
 if (clinicAtMatch) {
   location = clinicAtMatch[1].trim()
 }
 
 // Fall back to plain "at X" — but exclude time expressions like "at 9am"
 if (!location) {
-  const atMatch = text.match(/\bat\s+([A-Za-z][A-Za-z\s]+?)(?:\s+(?:on|from|this|next|\d)|,|$)/i)
+  const atMatch = text.match(new RegExp(
+    `\\bat\\s+([A-Za-z][A-Za-z\\s]+?)(?:\\s+(?:on|from|this|next|\\d|(?:${DAY_WORDS_PATTERN})s?\\b)|,|$)`, 'i'
+  ))
   if (atMatch) {
     const candidate = atMatch[1].trim()
     // Ignore if it looks like a time e.g. "at 9am"
@@ -263,6 +315,12 @@ for (const label of knownLabels) {
     }
   }
   if (isAdd || (!isCancellation && !isRestore && (matchedDoctor || dayOfWeek || location))) {
+    // interval/startWeek only matter for recurring adds — e.g. "every 3rd week"
+    // starting from the week currently being viewed, unless overridden with
+    // an explicit "starting week N"
+    const interval = isRecurring ? extractInterval(lower) : 1
+    const startWeek = isRecurring ? (extractStartWeek(lower) || rotationWeekNum || 1) : null
+
     return {
       intent: isRecurring ? 'add_recurring' : 'add',
       doctor: matchedDoctor,
@@ -275,6 +333,8 @@ for (const label of knownLabels) {
       rotationWeekNum,
       affectedDate,
       isRecurring,
+      interval,
+      startWeek,
     }
   }
 

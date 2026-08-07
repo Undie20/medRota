@@ -23,7 +23,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, profile }) 
   )
   const [width, setWidth] = useState(() => {
     const saved = parseInt(localStorage.getItem('medrota-sidebar-width'), 10)
-    return Number.isFinite(saved) ? Math.min(Math.max(saved, MIN_WIDTH), MAX_WIDTH) : 250
+    return Number.isFinite(saved) ? Math.min(Math.max(saved, MIN_WIDTH), MAX_WIDTH) : 150
   })
   const [isDragging, setIsDragging] = useState(false)
   // Only the desktop breakpoint gets the custom width; below lg we force the rail

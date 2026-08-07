@@ -93,4 +93,25 @@ export function getDayName(date) {
   return format(date, 'EEEE')
 }
 
+// Given a rotation length, an interval ("every Nth week"), and which week
+// the pattern starts from, returns which week numbers inside the rotation
+// cycle the pattern lands on.
+// e.g. rotationWeeks=4, interval=2, startWeek=1 -> [1, 3]  (fortnightly)
+// e.g. rotationWeeks=4, interval=3, startWeek=1 -> [1, 4]  (every 3rd week)
+// interval=1 (or omitted) means every week, i.e. all rotation weeks.
+export function getTargetWeeks(rotationWeeks, interval = 1, startWeek = 1) {
+  if (!interval || interval <= 1) {
+    return Array.from({ length: rotationWeeks }, (_, i) => i + 1)
+  }
+  const weeks = []
+  for (let w = 1; w <= rotationWeeks; w++) {
+    if (((w - startWeek) % interval + interval) % interval === 0) {
+      weeks.push(w)
+    }
+  }
+  // Safety net: if the interval doesn't land on any week in this rotation
+  // (e.g. interval longer than the rotation itself), just use the start week
+  return weeks.length > 0 ? weeks : [Math.min(Math.max(startWeek, 1), rotationWeeks)]
+}
+
 export { isSameDay, isSameMonth }
