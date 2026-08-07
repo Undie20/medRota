@@ -43,6 +43,10 @@ export default function Schedule({ org, profile }) {
   const [formEndTime, setFormEndTime] = useState('17:00')
   const [formWeekNumber, setFormWeekNumber] = useState(1)
   const [formDayOfWeek, setFormDayOfWeek] = useState('Monday')
+  // formIsOneOff: when true, this slot exists on formOneOffDate only and
+  // never recurs — it ignores the week_number rotation pattern entirely
+  const [formIsOneOff, setFormIsOneOff] = useState(false)
+  const [formOneOffDate, setFormOneOffDate] = useState(null)
   const [formNotes, setFormNotes] = useState('')
   const [formStaffIds, setFormStaffIds] = useState([])
   const [formLoading, setFormLoading] = useState(false)
@@ -125,18 +129,45 @@ export default function Schedule({ org, profile }) {
 
   // ─── SLOT LOOKUP HELPERS ──────────────────────────────────────────
 
+  // Formats a Date as YYYY-MM-DD using LOCAL date parts (not toISOString,
+  // which converts to UTC first and can shift the date by a day for
+  // timezones ahead of UTC — exactly the kind of one-day-off bug we don't
+  // want to bake into a brand new feature)
+  const formatDateOnly = (date) => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  // Parses a YYYY-MM-DD string back into a local Date (avoids the same
+  // UTC-shift problem `new Date('YYYY-MM-DD')` has)
+  const parseDateOnly = (str) => {
+    const [y, m, d] = str.split('-').map(Number)
+    return new Date(y, m - 1, d)
+  }
+
+  // Pattern slots only — excludes one-off slots, which are matched by
+  // exact date instead (see getOneOffSlotsForDate) regardless of rotation
   const getSlotsForCell = (dayName, weekNumber) => {
     return slots.filter(slot => {
+      if (slot.one_off_date) return false
       if (slot.day_of_week !== dayName) return false
       if (rotationWeeks > 1 && slot.week_number !== weekNumber) return false
       return true
     })
   }
 
+  // One-off slots that land on this exact calendar date
+  const getOneOffSlotsForDate = (date) => {
+    const dateStr = formatDateOnly(date)
+    return slots.filter(slot => slot.one_off_date === dateStr)
+  }
+
   const getSlotsForDate = (date) => {
     const dayName = getDayName(date)
     const weekNum = getWeekNum(date)
-    return getSlotsForCell(dayName, weekNum)
+    return [...getSlotsForCell(dayName, weekNum), ...getOneOffSlotsForDate(date)]
   }
 
   const getDoctorForSlot = (slot) => doctors.find(d => d.id === slot.doctor_id)
@@ -163,9 +194,11 @@ export default function Schedule({ org, profile }) {
 
   // ─── MODAL HELPERS ────────────────────────────────────────────────
 
-  const openAddModal = (dayName, weekNumber) => {
+  // date is the actual calendar date the user clicked — needed so we can
+  // save a genuine one-off (formIsOneOff) slot tied to that exact date
+  const openAddModal = (dayName, weekNumber, date = null) => {
     setSelectedSlot(null)
-    setSelectedCell({ dayName, weekNumber })
+    setSelectedCell({ dayName, weekNumber, date })
     setFormDoctorId(doctors[0]?.id || '')
     setFormLabel('')
     setFormLocation('')
@@ -173,6 +206,8 @@ export default function Schedule({ org, profile }) {
     setFormEndTime('17:00')
     setFormWeekNumber(weekNumber)
     setFormDayOfWeek(dayName)
+    setFormIsOneOff(false)
+    setFormOneOffDate(date)
     setFormNotes('')
     setFormStaffIds([])
     setFormError('')
@@ -189,6 +224,8 @@ export default function Schedule({ org, profile }) {
     setFormEndTime(slot.end_time || '17:00')
     setFormWeekNumber(slot.week_number || 1)
     setFormDayOfWeek(slot.day_of_week)
+    setFormIsOneOff(!!slot.one_off_date)
+    setFormOneOffDate(slot.one_off_date ? parseDateOnly(slot.one_off_date) : null)
     setFormNotes(slot.notes || '')
     const assigned = slotStaff.filter(ss => ss.slot_id === slot.id).map(ss => ss.staff_id)
     setFormStaffIds(assigned)
@@ -200,6 +237,8 @@ export default function Schedule({ org, profile }) {
     setModalOpen(false)
     setSelectedSlot(null)
     setSelectedCell(null)
+    setFormIsOneOff(false)
+    setFormOneOffDate(null)
   }
 
   const toggleStaff = (staffId) => {
@@ -331,6 +370,12 @@ export default function Schedule({ org, profile }) {
         setFormLabel(result.slotLabel || '')
         setFormLocation(result.location || '')
         setFormWeekNumber(result.rotationWeekNum || 1)
+        // affectedDate is the exact calendar date the command resolved to —
+        // pass it through so the "One-off — this date only" toggle is
+        // available, and auto-check it when the phrasing said "only" /
+        // "just this once" / etc (see isOneOff in commandParser.js)
+        setFormOneOffDate(result.affectedDate || null)
+        setFormIsOneOff(!!result.isOneOff)
         setFormNotes('')
         setFormStaffIds(result.staff?.map(s => s.id) || [])
         setFormError('')
@@ -422,11 +467,20 @@ export default function Schedule({ org, profile }) {
       return
     }
 
+    if (formIsOneOff && !formOneOffDate) {
+      setFormError('Could not determine the date for this one-off slot.')
+      setFormLoading(false)
+      return
+    }
+
+    // A one-off slot is tied to one exact date and ignores the rotation
+    // pattern entirely, so week_number is always null for it
     const slotData = {
       org_id: org.id,
       doctor_id: formDoctorId,
-      week_number: rotationWeeks > 1 ? formWeekNumber : null,
+      week_number: (rotationWeeks > 1 && !formIsOneOff) ? formWeekNumber : null,
       day_of_week: formDayOfWeek,
+      one_off_date: formIsOneOff ? formatDateOnly(formOneOffDate) : null,
       slot_label: formLabel,
       location: formLocation,
       start_time: formStartTime,
@@ -519,6 +573,11 @@ export default function Schedule({ org, profile }) {
           <p className="text-[13px] font-semibold text-label tracking-[-0.01em] truncate">
             {doctor?.name || 'Unknown'}
           </p>
+          {slot.one_off_date && (
+            <span className="text-label3 text-[9.5px] font-semibold uppercase tracking-[0.05em] bg-fill px-[5px] py-[1px] rounded-[4px] shrink-0">
+              One-off
+            </span>
+          )}
         </div>
         {slot.slot_label && <p className="text-[12.5px] text-label2 mt-0.5 truncate">{slot.slot_label}</p>}
         {slot.start_time && (
@@ -541,14 +600,19 @@ export default function Schedule({ org, profile }) {
     )
   }
 
-  // date param passed through so exceptions can be checked per actual calendar date
+  // date param passed through so exceptions can be checked per actual calendar
+  // date, and so one-off slots (which live on a specific date, not a
+  // day_of_week/week_number pattern) show up here too
   const renderCell = (dayName, weekNumber, isToday = false, date = null) => {
-    const cellSlots = getSlotsForCell(dayName, weekNumber)
+    const cellSlots = [
+      ...getSlotsForCell(dayName, weekNumber),
+      ...(date ? getOneOffSlotsForDate(date) : []),
+    ]
 
     return (
       <div
         key={`${dayName}-${weekNumber}`}
-        onClick={() => openAddModal(dayName, weekNumber)}
+        onClick={() => openAddModal(dayName, weekNumber, date)}
         className={`min-h-[150px] md:min-h-[190px] xl:min-h-[280px] p-2 rounded-[16px] border bg-surface shadow-ios cursor-pointer transition-colors flex flex-col gap-[7px] ${
           isToday ? 'border-accent' : 'border-sep hover:border-label3'
         }`}
@@ -636,7 +700,7 @@ export default function Schedule({ org, profile }) {
             <div className="text-center py-8">
               <p className="text-label2 text-[15px]">No clinics scheduled</p>
               <button
-                onClick={() => openAddModal(dayName, weekNum || 1)}
+                onClick={() => openAddModal(dayName, weekNum || 1, currentDate)}
                 className="mt-3 text-accent text-[15px] font-medium hover:opacity-70 transition-opacity"
               >
                 + Add a slot
@@ -647,7 +711,7 @@ export default function Schedule({ org, profile }) {
               {/* Pass currentDate so exceptions are checked for this specific date */}
               {daySlots.map(slot => renderSlotCard(slot, currentDate))}
               <button
-                onClick={() => openAddModal(dayName, weekNum || 1)}
+                onClick={() => openAddModal(dayName, weekNum || 1, currentDate)}
                 className="w-full text-label3 hover:text-accent hover:border-accent text-[13.5px] py-3 border border-dashed border-sep rounded-[12px] transition-colors"
               >
                 + Add slot
@@ -684,7 +748,7 @@ export default function Schedule({ org, profile }) {
             return (
               <div
                 key={date.toISOString()}
-                onClick={() => isActive && openAddModal(dayName, weekNum || 1)}
+                onClick={() => isActive && openAddModal(dayName, weekNum || 1, date)}
                 className={`min-h-[52px] md:min-h-[78px] p-1 md:p-1.5 rounded-[10px] md:rounded-[12px] border text-[12px] transition-colors ${
                   isToday
                     ? 'border-accent bg-accent/10'
@@ -823,7 +887,7 @@ export default function Schedule({ org, profile }) {
               <h3 className="text-label text-[16px] font-semibold tracking-[-0.02em]">
                 {selectedSlot
                   ? 'Edit Slot'
-                  : `Add Slot${rotationWeeks > 1 ? ` · Week ${formWeekNumber}` : ''}`
+                  : `Add Slot${rotationWeeks > 1 && !formIsOneOff ? ` · Week ${formWeekNumber}` : ''}`
                 }
               </h3>
               <button
@@ -849,7 +913,27 @@ export default function Schedule({ org, profile }) {
                 </select>
               </div>
 
-              {rotationWeeks > 1 && (
+              {/* Only offered when we know the exact date being added/edited —
+                  a plain rotation-pattern slot has no single date to pin to */}
+              {formOneOffDate && (
+                <div className="bg-surface border border-sep rounded-[14px] shadow-ios p-4 flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="one-off-toggle"
+                    checked={formIsOneOff}
+                    onChange={e => setFormIsOneOff(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-accent"
+                  />
+                  <label htmlFor="one-off-toggle" className="flex-1 cursor-pointer">
+                    <p className="text-label text-[14px] font-semibold">One-off — this date only</p>
+                    <p className="text-label3 text-[12.5px] mt-0.5">
+                      {formatDisplayDate(formOneOffDate)} only. Won't repeat on future rotation cycles.
+                    </p>
+                  </label>
+                </div>
+              )}
+
+              {rotationWeeks > 1 && !formIsOneOff && (
                 <div>
                   <label className={fieldLabelClass}>Rotation Week</label>
                   <select

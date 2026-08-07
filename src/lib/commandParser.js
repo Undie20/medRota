@@ -314,8 +314,24 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
     lower.includes('set up a clinic') ||
     lower.includes('is covering') ||
     lower.includes('is doing a clinic')
+
+  // Detects an explicit signal that this is a genuine single occurrence,
+  // not a repeating pattern — e.g. "this week Thursday only", "just this
+  // once". Only meaningful for the (non-recurring) 'add' intent.
+  const isOneOff =
+    lower.includes('only') ||
+    lower.includes('just this once') ||
+    lower.includes('just once') ||
+    lower.includes('one time') ||
+    lower.includes('one-off') ||
+    lower.includes('one off') ||
+    lower.includes('single occurrence') ||
+    lower.includes('not recurring') ||
+    lower.includes('this time only') ||
+    lower.includes('this occasion only')
+
   // Detects if the user wants to add a recurring slot across all rotation weeks
-  const isRecurring =
+  let isRecurring =
     lower.includes('every') ||
     lower.includes('each') ||
     lower.includes('fortnightly') ||
@@ -346,6 +362,13 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
     lower.includes('all thursdays') ||
     lower.includes('all saturdays') ||
     lower.includes('all sundays')
+
+  // "not recurring" / "non-recurring" contains the substring "recurring"
+  // but obviously means the opposite — an explicit negation always wins
+  if (lower.includes('not recurring') || lower.includes('non-recurring') || lower.includes('non recurring')) {
+    isRecurring = false
+  }
+
   // ── EXTRACT DOCTOR ─────────────────────────────────────────────────
   // Look for "Dr X" or just a name that matches a doctor
 
@@ -520,6 +543,9 @@ for (const label of knownLabels) {
       rotationWeekNum,
       affectedDate,
       isRecurring,
+      // isOneOff only makes sense for a non-recurring add — a signal like
+      // "this week only" means don't save it as a repeating pattern
+      isOneOff: !isRecurring && isOneOff,
       interval,
       startWeek,
     }

@@ -9,6 +9,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { navItemsFor } from './navItems'
+import logoIcon from '../assets/logo-icon.png'
+import logoIconCircular from '../assets/logo-icon-circular.png'
 
 const MIN_WIDTH = 190
 const MAX_WIDTH = 340
@@ -94,7 +96,11 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, profile }) 
       {/* App mark */}
       <div className={`flex items-center pt-1 ${isRail ? 'flex-col gap-2 px-0' : 'justify-between gap-2.5 px-2'}`}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 shrink-0 rounded-lg bg-accent flex items-center justify-center text-white text-[15px] font-bold">m</div>
+          {isRail ? (
+            <img src={logoIconCircular} alt="medRota" className="w-8 h-8 shrink-0 rounded-full" />
+          ) : (
+            <img src={logoIcon} alt="medRota" className="w-7 h-7 shrink-0" />
+          )}
           {!isRail && <h1 className="text-[15px] font-bold text-label tracking-[-0.02em] whitespace-nowrap">medRota</h1>}
         </div>
 

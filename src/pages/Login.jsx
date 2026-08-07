@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import logoIcon from '../assets/logo-icon.png'
 
 const fieldClass =
   'w-full bg-surface border border-sep rounded-[12px] px-3.5 py-3 text-label text-[15px] placeholder:text-label3 focus:outline-none focus:border-accent transition-colors'
@@ -46,7 +47,7 @@ export default function Login() {
 
         {/* App mark and tagline at the top */}
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="w-11 h-11 rounded-[12px] bg-accent flex items-center justify-center text-white text-[22px] font-bold mb-3">m</div>
+          <img src={logoIcon} alt="medRota" className="w-24 h-24 mb-3" />
           <h1 className="text-[24px] font-bold text-label tracking-[-0.03em]">medRota</h1>
           <p className="text-label2 mt-1 text-[14.5px]">Practice scheduling, simplified</p>
         </div>
