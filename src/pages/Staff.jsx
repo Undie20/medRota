@@ -125,16 +125,18 @@ export default function Staff({ org, profile }) {
   }
 
   // Invite a new user to this org
+  // Routed through the "inviteuser" edge function — inviting requires the
+  // service role key, which must stay server-side and never ship to the browser.
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return
     setInviteLoading(true)
     setInviteError('')
     setInviteSuccess('')
-    const { error } = await supabase.auth.admin.inviteUserByEmail(inviteEmail.trim(), {
-      data: { org_id: org.id }
+    const { data, error } = await supabase.functions.invoke('inviteuser', {
+      body: { email: inviteEmail.trim(), org_id: org.id }
     })
-    if (error) {
-      setInviteError(error.message)
+    if (error || data?.error) {
+      setInviteError(data?.error || error.message)
     } else {
       setInviteSuccess(`Invite sent to ${inviteEmail.trim()}`)
       setInviteEmail('')
