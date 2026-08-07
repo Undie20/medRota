@@ -541,7 +541,7 @@ export default function Schedule({ org, profile }) {
       <div
         key={`${dayName}-${weekNumber}`}
         onClick={() => openAddModal(dayName, weekNumber)}
-        className={`min-h-[300px] p-2 rounded-[16px] border bg-surface shadow-ios cursor-pointer transition-colors flex flex-col gap-[7px] ${
+        className={`min-h-[150px] md:min-h-[190px] xl:min-h-[280px] p-2 rounded-[16px] border bg-surface shadow-ios cursor-pointer transition-colors flex flex-col gap-[7px] ${
           isToday ? 'border-accent' : 'border-sep hover:border-label3'
         }`}
       >
@@ -562,45 +562,45 @@ export default function Schedule({ org, profile }) {
 
     return (
       <div className="relative">
+        {/* Edge arrows only where there's room for them */}
         <button
           onClick={() => setCurrentDate(navigateDate(currentDate, -1, view))}
           aria-label="Previous week"
-          className="hidden md:flex absolute left-[-20px] top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center rounded-full bg-surface border border-sep shadow-ios text-label2 text-[18px] leading-none hover:bg-fill hover:text-label transition-colors z-10"
+          className="hidden xl:flex absolute left-[-20px] top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center rounded-full bg-surface border border-sep shadow-ios text-label2 text-[18px] leading-none hover:bg-fill hover:text-label transition-colors z-10"
         >‹</button>
         <button
           onClick={() => setCurrentDate(navigateDate(currentDate, 1, view))}
           aria-label="Next week"
-          className="hidden md:flex absolute right-[-20px] top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center rounded-full bg-surface border border-sep shadow-ios text-label2 text-[18px] leading-none hover:bg-fill hover:text-label transition-colors z-10"
+          className="hidden xl:flex absolute right-[-20px] top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center rounded-full bg-surface border border-sep shadow-ios text-label2 text-[18px] leading-none hover:bg-fill hover:text-label transition-colors z-10"
         >›</button>
 
-        <div
-          className="grid gap-3 mb-[9px]"
-          style={{ gridTemplateColumns: `repeat(${activeWeekDates.length}, minmax(0, 1fr))` }}
-        >
-          {activeWeekDates.map(date => (
-            <div key={date.toISOString()} className="flex items-baseline gap-[7px] pl-1">
-              <span className="text-label3 text-[11px] font-semibold uppercase tracking-[0.07em]">
-                {getDayName(date).slice(0, 3)}
-              </span>
-              <span className={`text-[19px] font-bold tracking-[-0.03em] ${
-                isSameDay(date, today) ? 'text-accent' : 'text-label'
-              }`}>
-                {date.getDate()}
-              </span>
-              {rotationWeeks > 1 && (
-                <span className="text-label3 text-[11px]">Wk {getWeekNum(date)}</span>
-              )}
-            </div>
-          ))}
-        </div>
-        <div
-          className="grid gap-3"
-          style={{ gridTemplateColumns: `repeat(${activeWeekDates.length}, minmax(0, 1fr))` }}
-        >
+        {/* Wraps instead of squeezing: 1 column on a phone, 2-3 on a tablet,
+            every active day on a laptop. 230px is the narrowest a slot card
+            stays readable at. Day headers moved inside each column so the
+            header row can't desync from the cells when they wrap. */}
+        <div className="grid gap-2.5 md:gap-3 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
           {activeWeekDates.map(date => {
             const weekNum = getWeekNum(date)
-            // Pass the actual date so renderCell checks one-off exceptions
-            return renderCell(getDayName(date), weekNum, isSameDay(date, today), date)
+            const isToday = isSameDay(date, today)
+            return (
+              <div key={date.toISOString()} className="flex flex-col gap-2 min-w-0">
+                <div className="flex items-baseline gap-[7px] pl-1">
+                  <span className="text-label3 text-[11px] font-semibold uppercase tracking-[0.07em]">
+                    {getDayName(date).slice(0, 3)}
+                  </span>
+                  <span className={`text-[19px] font-bold tracking-[-0.03em] ${
+                    isToday ? 'text-accent' : 'text-label'
+                  }`}>
+                    {date.getDate()}
+                  </span>
+                  {rotationWeeks > 1 && (
+                    <span className="text-label3 text-[11px]">Wk {weekNum}</span>
+                  )}
+                </div>
+                {/* Pass the actual date so renderCell checks one-off exceptions */}
+                {renderCell(getDayName(date), weekNum, isToday, date)}
+              </div>
+            )
           })}
         </div>
       </div>
@@ -615,7 +615,7 @@ export default function Schedule({ org, profile }) {
     const daySlots = getSlotsForDate(currentDate)
 
     return (
-      <div className="max-w-[560px] flex flex-col gap-3">
+      <div className="w-full max-w-[560px] flex flex-col gap-3">
         {rotationWeeks > 1 && weekNum && (
           <p className="text-accent text-[12px] font-semibold uppercase tracking-[0.07em]">
             Rotation Week {weekNum}
@@ -656,7 +656,7 @@ export default function Schedule({ org, profile }) {
     const today = new Date()
 
     return (
-      <div className="bg-surface border border-sep rounded-[18px] shadow-ios p-3.5">
+      <div className="bg-surface border border-sep rounded-[18px] shadow-ios p-2 md:p-3.5 overflow-x-auto">
         <div className="grid grid-cols-7 gap-1.5 mb-1.5">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
             <div key={d} className="text-center text-label3 text-[11px] font-semibold py-1 uppercase tracking-[0.07em]">
@@ -677,7 +677,7 @@ export default function Schedule({ org, profile }) {
               <div
                 key={date.toISOString()}
                 onClick={() => isActive && openAddModal(dayName, weekNum || 1)}
-                className={`min-h-[78px] p-1.5 rounded-[12px] border text-[12px] transition-colors ${
+                className={`min-h-[52px] md:min-h-[78px] p-1 md:p-1.5 rounded-[10px] md:rounded-[12px] border text-[12px] transition-colors ${
                   isToday
                     ? 'border-accent bg-accent/10'
                     : isCurrentMonth && isActive
@@ -748,7 +748,7 @@ export default function Schedule({ org, profile }) {
               onClick={() => setCurrentDate(new Date())}
               className="h-8 px-3.5 rounded-[10px] bg-surface border border-sep text-label text-[13.5px] font-medium hover:bg-fill transition-colors"
             >Today</button>
-            <h2 className="text-label text-[22px] font-bold tracking-[-0.03em]">{getViewTitle()}</h2>
+            <h2 className="text-label text-[17px] md:text-[19px] lg:text-[22px] font-bold tracking-[-0.03em] truncate">{getViewTitle()}</h2>
           </div>
           <div className="flex p-0.5 bg-fill rounded-[10px]">
             {['day', 'week', 'month'].map(v => (
@@ -766,7 +766,7 @@ export default function Schedule({ org, profile }) {
         </div>
 
         <div>
-          <div className="flex items-center gap-2.5 bg-surface border border-sep rounded-[14px] shadow-ios pl-3.5 pr-1.5 py-1.5 focus-within:border-accent transition-colors">
+          <div className="flex items-center gap-2.5 bg-glass backdrop-blur-xl border border-sep rounded-[14px] shadow-ios pl-3.5 pr-1.5 py-1.5 focus-within:border-accent transition-colors">
             <span className="text-accent text-[15px]">✦</span>
             <input
               type="text"
@@ -779,8 +779,8 @@ export default function Schedule({ org, profile }) {
             <button
               onClick={handleAiParse}
               disabled={aiLoading || !aiInput.trim()}
-              className="h-[34px] px-[18px] bg-accent hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[14px] font-semibold rounded-[10px] transition-all whitespace-nowrap"
-            >{aiLoading ? 'Working...' : 'Run'}</button>
+              className="h-[38px] sm:h-[34px] px-4 sm:px-[18px] bg-accent hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[14px] font-semibold rounded-[10px] transition-all whitespace-nowrap shrink-0"
+            ><span className="hidden sm:inline">{aiLoading ? 'Working...' : 'Run'}</span><span className="sm:hidden">↵</span></button>
           </div>
           {aiError && <p className="text-red-500 text-[12.5px] px-1 mt-2">{aiError}</p>}
         </div>
@@ -803,14 +803,14 @@ export default function Schedule({ org, profile }) {
       {modalOpen && (
         <div
           onClick={closeModal}
-          className="fixed inset-0 bg-black/35 flex items-center justify-center z-50 p-6 animate-fade-in"
+          className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-6 animate-fade-in"
         >
           <div
             onClick={e => e.stopPropagation()}
-            className="bg-bg rounded-[22px] shadow-sheet w-full max-w-[440px] max-h-[88vh] overflow-y-auto animate-sheet-in"
+            className="bg-bg rounded-t-[22px] sm:rounded-[22px] shadow-sheet w-full sm:max-w-[440px] max-h-[92dvh] sm:max-h-[88vh] overflow-y-auto pb-safe sm:pb-0 animate-sheet-in"
           >
             {/* Sheet header — Cancel / title / Save, iOS style */}
-            <div className="sticky top-0 z-10 bg-bg border-b border-sep flex items-center justify-between px-[18px] pt-4 pb-3">
+            <div className="sticky top-0 z-10 bg-glass backdrop-blur-xl border-b border-sep flex items-center justify-between px-[18px] pt-4 pb-3">
               <button onClick={closeModal} className="text-accent text-[15.5px]">Cancel</button>
               <h3 className="text-label text-[16px] font-semibold tracking-[-0.02em]">
                 {selectedSlot

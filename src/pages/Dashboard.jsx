@@ -1,11 +1,14 @@
-// Dashboard.jsx - the main app shell after login
-// This file is the container that holds the sidebar and renders
-// whichever page the user navigates to.
-// Think of it like a picture frame - the sidebar stays the same,
-// only the content in the middle changes.
+// Dashboard.jsx - the app shell after login
+//
+// Layout: sidebar (md+) | [ sticky glass topbar + scrolling main ] | bottom tabs (mobile)
+// The scroll container is the right-hand column, NOT <main> - that's what
+// lets content pass under the translucent topbar.
+
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useTheme } from '../hooks/useTheme'
 import Sidebar from '../components/Sidebar'
+import BottomTabs from '../components/BottomTabs'
 import TopBar from '../components/Topbar'
 import Schedule from './Schedule'
 import Doctors from './Doctors'
@@ -17,13 +20,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState(null)
   const [org, setOrg] = useState(null)
 
-  // Appearance: 'light' or 'dark'. Remembered between visits.
-  const [theme, setTheme] = useState(() => localStorage.getItem('medrota-theme') || 'light')
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem('medrota-theme', theme)
-  }, [theme])
+  const { mode, setMode } = useTheme()
 
   const fetchProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -45,15 +42,10 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
+  useEffect(() => { fetchProfile() }, [])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-  }
+  const handleLogout = async () => { await supabase.auth.signOut() }
 
-  // Redirect staff away from admin-only pages if they somehow land there
   const safePage = profile?.role !== 'admin' ? 'schedule' : currentPage
 
   const renderPage = () => {
@@ -67,18 +59,31 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-label flex">
+    <div className="h-[100dvh] bg-bg text-label flex overflow-hidden">
       <Sidebar
         currentPage={safePage}
         onNavigate={setCurrentPage}
         onLogout={handleLogout}
         profile={profile}
       />
-      <div className="flex-1 flex flex-col min-w-0">
-        <TopBar org={org} profile={profile} theme={theme} onToggleTheme={setTheme} />
-        <main className="flex-1 p-[26px] overflow-auto">
+
+      {/* Right column IS the scroller, so the sticky topbar blurs what passes under it */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <TopBar
+          org={org}
+          profile={profile}
+          mode={mode}
+          onSetMode={setMode}
+          onLogout={handleLogout}
+        />
+        <main className="flex-1 p-4 md:p-5 lg:p-[26px]">
           {renderPage()}
         </main>
+        <BottomTabs
+          currentPage={safePage}
+          onNavigate={setCurrentPage}
+          profile={profile}
+        />
       </div>
     </div>
   )

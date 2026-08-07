@@ -13,10 +13,8 @@ export default function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Restore the saved appearance before anything paints
-    if (localStorage.getItem('medrota-theme') === 'dark') {
-      document.documentElement.classList.add('dark')
-    }
+    // Appearance is applied by the inline script in index.html before
+    // React boots (it handles 'system' too), so nothing to do here.
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
