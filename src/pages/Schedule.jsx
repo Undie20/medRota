@@ -646,11 +646,13 @@ export default function Schedule({ org, profile }) {
           className="hidden xl:flex absolute right-[-20px] top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center rounded-full bg-surface border border-sep shadow-ios text-label2 text-[18px] leading-none hover:bg-fill hover:text-label transition-colors z-10"
         >›</button>
 
-        {/* Wraps instead of squeezing: 1 column on a phone, 2-3 on a tablet,
-            every active day on a laptop. 230px is the narrowest a slot card
-            stays readable at. Day headers moved inside each column so the
-            header row can't desync from the cells when they wrap. */}
-        <div className="grid gap-2.5 md:gap-3 [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))]">
+        {/* Single column on a phone (cards stay readable), then every
+            active day in one row from tablet width up - no wrapping to a
+            second row once there's room, columns just share the width. */}
+        <div
+          className="grid gap-2.5 md:gap-3 grid-cols-1 md:[grid-template-columns:repeat(var(--day-count),minmax(0,1fr))]"
+          style={{ '--day-count': activeWeekDates.length }}
+        >
           {activeWeekDates.map(date => {
             const weekNum = getWeekNum(date)
             const isToday = isSameDay(date, today)
