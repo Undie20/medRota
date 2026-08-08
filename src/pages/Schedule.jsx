@@ -650,7 +650,7 @@ export default function Schedule({ org, profile }) {
             every active day on a laptop. 230px is the narrowest a slot card
             stays readable at. Day headers moved inside each column so the
             header row can't desync from the cells when they wrap. */}
-        <div className="grid gap-2.5 md:gap-3 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
+        <div className="grid gap-2.5 md:gap-3 [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))]">
           {activeWeekDates.map(date => {
             const weekNum = getWeekNum(date)
             const isToday = isSameDay(date, today)
