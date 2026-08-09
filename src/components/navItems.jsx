@@ -27,10 +27,17 @@ export const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   ),
+  tasks: (
+    <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-5 9l2 2 4-4" />
+    </svg>
+  ),
 }
 
 export const adminNavItems = [
   { label: 'Schedule', key: 'schedule', icon: icons.schedule },
+  { label: 'Tasks', key: 'tasks', icon: icons.tasks },
   { label: 'Doctors', key: 'doctors', icon: icons.doctors },
   { label: 'Staff', key: 'staff', icon: icons.staff },
   { label: 'Settings', key: 'settings', icon: icons.settings },
@@ -38,6 +45,7 @@ export const adminNavItems = [
 
 export const staffNavItems = [
   { label: 'Schedule', key: 'schedule', icon: icons.schedule },
+  { label: 'Tasks', key: 'tasks', icon: icons.tasks },
 ]
 
 export function navItemsFor(profile) {

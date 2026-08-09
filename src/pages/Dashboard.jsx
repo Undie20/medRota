@@ -14,6 +14,8 @@ import Schedule from './Schedule'
 import Doctors from './Doctors'
 import Staff from './Staff'
 import Settings from './Settings'
+import Tasks from './Tasks'
+import { navItemsFor } from '../components/navItems'
 
 export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState('schedule')
@@ -46,15 +48,19 @@ export default function Dashboard() {
 
   const handleLogout = async () => { await supabase.auth.signOut() }
 
-  const safePage = profile?.role !== 'admin' ? 'schedule' : currentPage
+  // Only allow navigating to a page the current role actually has in its nav —
+  // falls back to the role's first item (e.g. Schedule) for anything else.
+  const allowedKeys = navItemsFor(profile).map(item => item.key)
+  const safePage = allowedKeys.includes(currentPage) ? currentPage : allowedKeys[0]
 
   const renderPage = () => {
     switch (safePage) {
-      case 'schedule': return <Schedule org={org} profile={profile} />
+      case 'schedule': return <Schedule org={org} profile={profile} onNavigate={setCurrentPage} />
+      case 'tasks': return <Tasks org={org} profile={profile} />
       case 'doctors': return <Doctors org={org} profile={profile} />
       case 'staff': return <Staff org={org} profile={profile} />
       case 'settings': return <Settings org={org} profile={profile} />
-      default: return <Schedule org={org} profile={profile} />
+      default: return <Schedule org={org} profile={profile} onNavigate={setCurrentPage} />
     }
   }
 

@@ -24,8 +24,9 @@ import {
   getTargetWeeks,
 } from '../lib/scheduleUtils'
 
-export default function Schedule({ org, profile }) {
+export default function Schedule({ org, profile, onNavigate }) {
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [openTaskCount, setOpenTaskCount] = useState(0)
   const [view, setView] = useState('week')
   const [scheduleConfig, setScheduleConfig] = useState(null)
   const [slots, setSlots] = useState([])
@@ -146,6 +147,23 @@ export default function Schedule({ org, profile }) {
     const [y, m, d] = str.split('-').map(Number)
     return new Date(y, m - 1, d)
   }
+
+  // Count of the current user's own open tasks that are due today or
+  // overdue — feeds the small summary widget above the calendar. Hidden
+  // entirely when zero, so it never adds clutter to the schedule view.
+  useEffect(() => {
+    if (!org || !profile) return
+    const fetchOpenTaskCount = async () => {
+      const { count } = await supabase
+        .from('task_assignees')
+        .select('task_id, tasks!inner(due_date)', { count: 'exact', head: true })
+        .eq('profile_id', profile.id)
+        .eq('completed', false)
+        .lte('tasks.due_date', formatDateOnly(new Date()))
+      setOpenTaskCount(count || 0)
+    }
+    fetchOpenTaskCount()
+  }, [org, profile])
 
   // Pattern slots only — excludes one-off slots, which are matched by
   // exact date instead (see getOneOffSlotsForDate) regardless of rotation
@@ -805,6 +823,20 @@ export default function Schedule({ org, profile }) {
   return (
     <div className="flex gap-4 h-full">
       <div className="flex-1 flex flex-col gap-[18px] min-w-0">
+
+        {openTaskCount > 0 && onNavigate && (
+          <div className="bg-surface border border-sep rounded-[16px] shadow-ios p-4 flex items-center justify-between">
+            <p className="text-label font-semibold text-[15px]">
+              {openTaskCount} task{openTaskCount === 1 ? '' : 's'} need{openTaskCount === 1 ? 's' : ''} your attention
+            </p>
+            <button
+              onClick={() => onNavigate('tasks')}
+              className="text-accent text-[13.5px] font-medium shrink-0"
+            >
+              View all
+            </button>
+          </div>
+        )}
 
         <div className="flex items-center justify-between flex-wrap gap-3.5">
           <div className="flex items-center gap-3">
