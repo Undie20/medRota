@@ -15,6 +15,7 @@ export default function Staff({ org, profile }) {
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
   const [color, setColor] = useState('#10b981')
+  const [email, setEmail] = useState('')
   const [customFields, setCustomFields] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -56,6 +57,7 @@ export default function Staff({ org, profile }) {
     setName('')
     setRole('')
     setColor('#10b981')
+    setEmail('')
     setCustomFields([])
     setError('')
     setModalOpen(true)
@@ -66,6 +68,7 @@ export default function Staff({ org, profile }) {
     setName(member.name)
     setRole(member.role || '')
     setColor(member.color || '#10b981')
+    setEmail(member.email || '')
     const fields = Object.entries(member.fields || {}).map(([label, value]) => ({ label, value }))
     setCustomFields(fields)
     setError('')
@@ -101,20 +104,38 @@ export default function Staff({ org, profile }) {
     customFields.forEach(f => {
       if (f.label.trim()) fieldsObject[f.label.trim()] = f.value
     })
-    if (editingStaff) {
-      const { error } = await supabase
-        .from('staff')
-        .update({ name: name.trim(), role: role.trim(), color, fields: fieldsObject })
-        .eq('id', editingStaff.id)
-      if (error) setError(error.message)
-      else { closeModal(); fetchStaff() }
-    } else {
-      const { error } = await supabase
-        .from('staff')
-        .insert({ name: name.trim(), role: role.trim(), color, fields: fieldsObject, org_id: org.id })
-      if (error) setError(error.message)
-      else { closeModal(); fetchStaff() }
+    const trimmedEmail = email.trim()
+    // Only invite when the email is new or has changed — editing an
+    // unrelated field (role, colour, ...) shouldn't re-send the email.
+    const shouldInvite = trimmedEmail && trimmedEmail !== (editingStaff?.email || '')
+    const payload = { name: name.trim(), role: role.trim(), color, email: trimmedEmail || null, fields: fieldsObject }
+
+    const { error } = editingStaff
+      ? await supabase.from('staff').update(payload).eq('id', editingStaff.id)
+      : await supabase.from('staff').insert({ ...payload, org_id: org.id })
+
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
     }
+
+    if (shouldInvite) {
+      const { data, error: inviteErr } = await supabase.functions.invoke('inviteuser', {
+        body: { email: trimmedEmail, org_id: org.id }
+      })
+      if (inviteErr || data?.error) {
+        // The staff row is already saved — surface the invite failure but
+        // don't discard it, so the admin can retry the invite from Edit.
+        setError(`Saved, but the invite couldn't be sent: ${data?.error || inviteErr.message}`)
+        setLoading(false)
+        fetchStaff()
+        return
+      }
+    }
+
+    closeModal()
+    fetchStaff()
     setLoading(false)
   }
 
@@ -302,9 +323,14 @@ export default function Staff({ org, profile }) {
                   {members.map(member => (
                     <div key={member.id} className="bg-surface border border-sep rounded-[16px] shadow-ios p-4 flex flex-col gap-3">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <span className="w-[9px] h-[9px] rounded-full shrink-0" style={{ backgroundColor: member.color || '#10b981' }} />
-                          <h3 className="text-label font-semibold text-[15px] tracking-[-0.01em]">{member.name}</h3>
+                          <h3 className="text-label font-semibold text-[15px] tracking-[-0.01em] truncate">{member.name}</h3>
+                          {member.email && (
+                            <span className="shrink-0 text-label3 text-[9.5px] font-semibold uppercase tracking-[0.05em] bg-fill px-[5px] py-[1px] rounded-[4px]">
+                              App access
+                            </span>
+                          )}
                         </div>
                         {profile?.role === 'admin' && (
                           <div className="flex gap-3">
@@ -371,6 +397,14 @@ export default function Staff({ org, profile }) {
                 <input type="text" value={role} onChange={e => setRole(e.target.value)}
                   className={fieldClass}
                   placeholder="e.g. Nurse, Receptionist, Practice Manager" />
+              </div>
+
+              <div>
+                <label className={fieldLabelClass}>Email</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  className={fieldClass}
+                  placeholder="e.g. jane@example.com" />
+                <p className="text-label3 text-[12.5px] mt-1.5 pl-1">Optional — sends them an invite to log in and use the app, including Tasks</p>
               </div>
 
               <div>
