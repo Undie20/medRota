@@ -121,13 +121,15 @@ export default function Staff({ org, profile }) {
     }
 
     if (shouldInvite) {
-      const { data, error: inviteErr } = await supabase.functions.invoke('inviteuser', {
-        body: { email: trimmedEmail, org_id: org.id }
-      })
-      if (inviteErr || data?.error) {
+      let result = await sendInvite(trimmedEmail)
+      if (!result.ok && result.code === 'already_invited') {
+        const wantsResend = window.confirm(`${result.message}\n\nResend the invite email?`)
+        result = wantsResend ? await sendInvite(trimmedEmail, { resend: true }) : { ok: true }
+      }
+      if (!result.ok) {
         // The staff row is already saved — surface the invite failure but
         // don't discard it, so the admin can retry the invite from Edit.
-        setError(`Saved, but the invite couldn't be sent: ${data?.error || inviteErr.message}`)
+        setError(`Saved, but the invite couldn't be sent: ${result.message}`)
         setLoading(false)
         fetchStaff()
         return
@@ -137,6 +139,31 @@ export default function Staff({ org, profile }) {
     closeModal()
     fetchStaff()
     setLoading(false)
+  }
+
+  // Invite (or resend an invite to) an org member by email. supabase-js
+  // doesn't surface the JSON error body from a non-2xx edge function
+  // response by default — it has to be unwrapped from error.context —
+  // otherwise every failure just shows "Edge Function returned a non-2xx
+  // status code" instead of the actual reason.
+  const sendInvite = async (targetEmail, { resend = false } = {}) => {
+    const { data, error } = await supabase.functions.invoke('inviteuser', {
+      body: { email: targetEmail, org_id: org.id, resend }
+    })
+    if (error) {
+      let message = error.message
+      let code
+      if (error.context?.json) {
+        try {
+          const body = await error.context.json()
+          message = body?.error || message
+          code = body?.code
+        } catch { /* response wasn't JSON — fall back to error.message */ }
+      }
+      return { ok: false, code, message }
+    }
+    if (data?.error) return { ok: false, code: data.code, message: data.error }
+    return { ok: true }
   }
 
   const handleDelete = async (staffId) => {
@@ -149,17 +176,26 @@ export default function Staff({ org, profile }) {
   // Routed through the "inviteuser" edge function — inviting requires the
   // service role key, which must stay server-side and never ship to the browser.
   const handleInvite = async () => {
-    if (!inviteEmail.trim()) return
+    const targetEmail = inviteEmail.trim()
+    if (!targetEmail) return
     setInviteLoading(true)
     setInviteError('')
     setInviteSuccess('')
-    const { data, error } = await supabase.functions.invoke('inviteuser', {
-      body: { email: inviteEmail.trim(), org_id: org.id }
-    })
-    if (error || data?.error) {
-      setInviteError(data?.error || error.message)
+
+    let result = await sendInvite(targetEmail)
+    if (!result.ok && result.code === 'already_invited') {
+      const wantsResend = window.confirm(`${result.message}\n\nResend the invite email?`)
+      if (!wantsResend) {
+        setInviteLoading(false)
+        return
+      }
+      result = await sendInvite(targetEmail, { resend: true })
+    }
+
+    if (!result.ok) {
+      setInviteError(result.message)
     } else {
-      setInviteSuccess(`Invite sent to ${inviteEmail.trim()}`)
+      setInviteSuccess(`Invite sent to ${targetEmail}`)
       setInviteEmail('')
     }
     setInviteLoading(false)
