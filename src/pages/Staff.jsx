@@ -362,11 +362,15 @@ export default function Staff({ org, profile }) {
                         <div className="flex items-center gap-2.5 min-w-0">
                           <span className="w-[9px] h-[9px] rounded-full shrink-0" style={{ backgroundColor: member.color || '#10b981' }} />
                           <h3 className="text-label font-semibold text-[15px] tracking-[-0.01em] truncate">{member.name}</h3>
-                          {member.email && (
-                            <span className="shrink-0 text-label3 text-[9.5px] font-semibold uppercase tracking-[0.05em] bg-fill px-[5px] py-[1px] rounded-[4px]">
+                          {member.profile_id ? (
+                            <span className="shrink-0 text-emerald-600 dark:text-emerald-400 text-[9.5px] font-semibold uppercase tracking-[0.05em] bg-emerald-500/15 px-[5px] py-[1px] rounded-[4px]">
                               App access
                             </span>
-                          )}
+                          ) : member.email ? (
+                            <span className="shrink-0 text-label3 text-[9.5px] font-semibold uppercase tracking-[0.05em] bg-fill px-[5px] py-[1px] rounded-[4px]">
+                              Invited
+                            </span>
+                          ) : null}
                         </div>
                         {profile?.role === 'admin' && (
                           <div className="flex gap-3">

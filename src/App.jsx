@@ -7,6 +7,7 @@ import { supabase } from './lib/supabase'
 
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Welcome from './pages/Welcome'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -39,6 +40,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/welcome" element={session ? <Welcome /> : <Navigate to="/login" />} />
         <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/login" />} />
         <Route path="*" element={<Navigate to={session ? "/dashboard" : "/login"} />} />
       </Routes>

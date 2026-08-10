@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     // real domain. The origin still has to be allow-listed in Supabase's
     // Auth > URL Configuration > Redirect URLs for this to be honoured.
     const origin = req.headers.get('origin')
-    const redirectTo = origin ? `${origin}/dashboard` : undefined
+    const redirectTo = origin ? `${origin}/welcome` : undefined
     const inviteOptions = { data: { org_id }, ...(redirectTo ? { redirectTo } : {}) }
 
     if (resend) {
