@@ -199,7 +199,7 @@ export default function Schedule({ org, profile, onNavigate }) {
   // Checks one-off exceptions first, then falls back to the permanent pattern flag
   const isSlotCancelledOnDate = (slot, date) => {
     if (date) {
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = formatDateOnly(date)
       const exception = slotExceptions.find(
         e => e.slot_id === slot.id && e.exception_date === dateStr
       )
@@ -284,9 +284,6 @@ export default function Schedule({ org, profile, onNavigate }) {
         cycleStartDate
       )
 
-      // Debug log — remove this once everything is working
-      console.log('Parser result:', JSON.stringify(result))
-
       if (!result) {
         setAiError('Could not understand that. Try: "Dr X is away Friday" or "Dr X has a clinic at Location, Thursday 9am-5pm"')
         setAiLoading(false)
@@ -317,7 +314,7 @@ export default function Schedule({ org, profile, onNavigate }) {
             d => getDayName(d) === slot.day_of_week
           )
           for (const date of matchingDates) {
-            const dateStr = date.toISOString().split('T')[0]
+            const dateStr = formatDateOnly(date)
             // Insert a one-off exception for this specific date only
             await supabase
               .from('slot_exceptions')
@@ -357,7 +354,7 @@ export default function Schedule({ org, profile, onNavigate }) {
             d => getDayName(d) === slot.day_of_week
           )
           for (const date of matchingDates) {
-            const dateStr = date.toISOString().split('T')[0]
+            const dateStr = formatDateOnly(date)
             await supabase
               .from('slot_exceptions')
               .upsert({

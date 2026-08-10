@@ -281,7 +281,10 @@ export function parseCommand(text, doctors, staffList, currentDate, rotationWeek
     lower.includes('away') ||
     lower.includes('cancel') ||
     lower.includes('not working') ||
-    lower.includes('off') ||
+    // Word-boundary, not includes() — a bare substring match on "off" also
+    // fires on location names like "Office" or "Coffee" (e.g. "clinic at
+    // Coffee House"), misreading an add command as a cancellation.
+    /\boff\b/.test(lower) ||
     lower.includes('sick') ||
     lower.includes('leave') ||
     lower.includes('unavailable') ||
