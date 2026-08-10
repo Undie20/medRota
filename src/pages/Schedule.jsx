@@ -504,7 +504,10 @@ export default function Schedule({ org, profile, onNavigate }) {
       start_time: formStartTime,
       end_time: formEndTime,
       notes: formNotes,
-      is_cancelled: false,
+      // Preserve whatever cancelled state the slot already had — this used
+      // to hardcode false, which silently un-cancelled a slot the moment
+      // an admin edited any other field on it and hit Save.
+      is_cancelled: selectedSlot ? selectedSlot.is_cancelled : false,
     }
 
     let slotId = selectedSlot?.id
@@ -551,10 +554,18 @@ export default function Schedule({ org, profile, onNavigate }) {
     // Permanently toggles the slot pattern
     // Use the command bar for one-off cancellations
     const slot = slots.find(s => s.id === slotId)
-    await supabase
+    const nextCancelled = !slot.is_cancelled
+    const { error } = await supabase
       .from('schedule_slots')
-      .update({ is_cancelled: !slot.is_cancelled })
+      .update({ is_cancelled: nextCancelled })
       .eq('id', slotId)
+    if (error) { setFormError(error.message); return }
+    // The write succeeded, but nothing in the modal reflected it before —
+    // selectedSlot is separate state from `slots` and fetchSlots() alone
+    // doesn't touch it, so the "Mark Cancelled"/"Restore Slot" label and
+    // the cancelled-state carried into the next Save both stayed stale
+    // until the modal was closed and reopened.
+    setSelectedSlot(prev => prev ? { ...prev, is_cancelled: nextCancelled } : prev)
     await fetchSlots()
   }
 
