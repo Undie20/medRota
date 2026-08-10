@@ -166,6 +166,30 @@ export default function Staff({ org, profile }) {
     return { ok: true }
   }
 
+  // Makes sure an invited email has a roster row to land in — Staff is
+  // meant to be the one place to see everyone, regardless of whether they
+  // were invited from here or from Team Access. Placeholder name gets
+  // replaced with their real name automatically once they finish
+  // onboarding (see complete_own_profile in the migrations).
+  const ensureStaffRow = async (targetEmail) => {
+    const { data: existing } = await supabase
+      .from('staff')
+      .select('id')
+      .eq('org_id', org.id)
+      .ilike('email', targetEmail)
+      .maybeSingle()
+    if (existing) return
+
+    await supabase.from('staff').insert({
+      org_id: org.id,
+      name: targetEmail,
+      role: '',
+      color: '#10b981',
+      email: targetEmail,
+      fields: {},
+    })
+  }
+
   const handleDelete = async (staffId) => {
     if (!window.confirm('Are you sure you want to delete this staff member?')) return
     const { error } = await supabase.from('staff').delete().eq('id', staffId)
@@ -195,6 +219,8 @@ export default function Staff({ org, profile }) {
     if (!result.ok) {
       setInviteError(result.message)
     } else {
+      await ensureStaffRow(targetEmail)
+      fetchStaff()
       setInviteSuccess(`Invite sent to ${targetEmail}`)
       setInviteEmail('')
     }
